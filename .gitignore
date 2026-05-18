@@ -1,0 +1,23 @@
+# Visual Studio / .NET build outputs
+.vs/
+bin/
+obj/
+
+# Azure Functions local settings and secrets
+local.settings.json
+
+# Visual Studio user-specific files
+*.user
+*.suo
+
+# VS Code local workspace settings
+.vscode/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Arduino build / temp outputs
+*.elf
+*.hex
+*.bin
