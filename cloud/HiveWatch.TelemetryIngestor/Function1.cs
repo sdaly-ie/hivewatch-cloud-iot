@@ -1,5 +1,6 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using HiveWatch.TelemetryIngestor.Models;
+using HiveWatch.TelemetryIngestor.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -10,10 +11,14 @@ namespace HiveWatch.TelemetryIngestor;
 public class Function1
 {
     private readonly ILogger<Function1> _logger;
+    private readonly TelemetryStorageService _telemetryStorageService;
 
-    public Function1(ILogger<Function1> logger)
+    public Function1(
+        ILogger<Function1> logger,
+        TelemetryStorageService telemetryStorageService)
     {
         _logger = logger;
+        _telemetryStorageService = telemetryStorageService;
     }
 
     [Function("IngestTelemetry")]
@@ -67,8 +72,33 @@ public class Function1
 
         DateTimeOffset receivedAtUtc = DateTimeOffset.UtcNow;
 
+        try
+        {
+            await _telemetryStorageService.StoreAsync(
+                reading,
+                receivedAtUtc,
+                req.HttpContext.RequestAborted);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Validated telemetry could not be persisted. DeviceId={DeviceId}, SensorId={SensorId}",
+                reading.DeviceId,
+                reading.SensorId);
+
+            return new ObjectResult(new
+            {
+                status = "error",
+                message = "Telemetry payload was valid, but storage failed."
+            })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            };
+        }
+
         _logger.LogInformation(
-            "Telemetry accepted: DeviceId={DeviceId}, SensorId={SensorId}, Type={Type}, Unit={Unit}, Value={Value}, ReceivedAtUtc={ReceivedAtUtc}",
+            "Telemetry accepted and persisted: DeviceId={DeviceId}, SensorId={SensorId}, Type={Type}, Unit={Unit}, Value={Value}, ReceivedAtUtc={ReceivedAtUtc}",
             reading.DeviceId,
             reading.SensorId,
             reading.Type,
@@ -114,23 +144,5 @@ public class Function1
         }
 
         return errors;
-    }
-
-    public class TelemetryReading
-    {
-        [JsonPropertyName("device_id")]
-        public string? DeviceId { get; set; }
-
-        [JsonPropertyName("sensor_id")]
-        public string? SensorId { get; set; }
-
-        [JsonPropertyName("type")]
-        public string? Type { get; set; }
-
-        [JsonPropertyName("unit")]
-        public string? Unit { get; set; }
-
-        [JsonPropertyName("value")]
-        public double? Value { get; set; }
     }
 }
