@@ -21,3 +21,8 @@ Thumbs.db
 *.elf
 *.hex
 *.bin
+
+# Visual Studio Azure publish / service dependency metadata
+cloud/HiveWatch.TelemetryIngestor/Properties/PublishProfiles/
+cloud/HiveWatch.TelemetryIngestor/Properties/ServiceDependencies/
+cloud/HiveWatch.TelemetryIngestor/Properties/serviceDependencies*.json
