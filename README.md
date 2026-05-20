@@ -6,8 +6,9 @@ The current implementation focuses on a validated temperature telemetry path usi
 - An ESP32 development board
 - A waterproof DS18B20 temperature probe
 - Staged firmware proofs
-- A .NET 8 isolated Azure Function ingestion endpoint
+- A .NET 8 isolated Azure Function backend
 - Azure Table Storage for durable telemetry persistence
+- A hosted read-back endpoint for the latest stored telemetry
 
 The project is being developed in technical stages, with each layer tested before moving to the next.
 
@@ -19,11 +20,17 @@ The repository currently captures a completed device-to-cloud proof-of-concept p
 
 > **Live DS18B20 temperature reading -> ESP32 -> Wi-Fi / HTTPS -> hosted Azure Function ingestion endpoint**
 
-It also now captures a validated cloud persistence path for:
+It also captures a validated cloud persistence path for:
 
 > **Valid telemetry payload -> hosted Azure Function -> Azure Table Storage**
 
 The hosted Azure Function accepts a JSON telemetry payload, validates the required fields, persists accepted telemetry to Azure Table Storage, and then returns a structured acknowledgement.
+
+The repository now also captures a validated telemetry read-back path for:
+
+> **Azure Table Storage -> hosted Azure Function retrieval endpoint -> latest stored telemetry returned as JSON**
+
+In this proof of concept, “recent” retrieval means the latest stored telemetry rows ordered by `ReceivedAtUtc` in descending order. It does not yet represent a fixed time-window query such as “last 24 hours”.
 
 ### Current status
 
@@ -36,7 +43,8 @@ The hosted Azure Function accepts a JSON telemetry payload, validates the requir
 | Azure Function ingestion endpoint | Validated |
 | ESP32 -> hosted Azure Function telemetry POST | Validated |
 | Accepted telemetry -> Azure Table Storage persistence | Validated through local and hosted Function API checks |
-| Dashboard retrieval / visualisation | Next milestone |
+| Latest stored telemetry retrieval endpoint | Validated through local and hosted Function GET checks |
+| Dashboard foundation / visualisation | Next milestone |
 
 ---
 
@@ -49,6 +57,7 @@ The hosted Azure Function accepts a JSON telemetry payload, validates the requir
 | Connectivity and payload | Wi-Fi, HTTP/HTTPS POST, JSON telemetry payloads |
 | Cloud backend | Azure Functions, Azure Table Storage, .NET 8 isolated worker model, C# |
 | Storage integration | Azure.Data.Tables client library, `TelemetryReadings` table |
+| Retrieval path | HTTP GET Function endpoint, latest stored telemetry JSON read-back |
 | Validation and integration testing | Arduino Serial Monitor, Webhook.site remote POST smoke test, PowerShell REST checks, Azure Table Storage inspection |
 | Version control | Git and GitHub |
 
@@ -62,11 +71,13 @@ flowchart LR
     B --> C[Wi-Fi / HTTPS POST]
     C --> D[Azure Function<br/>IngestTelemetry]
     D --> E[Azure Table Storage<br/>TelemetryReadings]
-    E --> F[Accepted JSON acknowledgement<br/>returned after persistence succeeds]
+    D --> F[Accepted JSON acknowledgement<br/>returned after persistence succeeds]
+    E --> G[Azure Function<br/>GetRecentTelemetry]
+    G --> H[Latest stored telemetry<br/>returned as JSON]
 ```
 
-The cloud ingestion path and Azure Table Storage persistence path have now both been demonstrated.  
-The next proof-of-concept milestone is to **retrieve stored telemetry for recent/historical inspection and dashboard visualisation**.
+The cloud ingestion path, Azure Table Storage persistence path, and latest stored telemetry retrieval path have now been demonstrated in staged proof points.  
+The next milestone is to use the retrievable telemetry as the foundation for dashboard development and monitoring views.
 
 ---
 
@@ -91,6 +102,16 @@ This test run shows the ESP32 capturing a live DS18B20 temperature reading, post
 The persistence milestone has now been validated through both local and hosted Function API checks.  
 A hosted PowerShell POST returned `accepted`, and the accepted telemetry was confirmed as stored rows in the Azure Table Storage `TelemetryReadings` table.
 
+### Latest stored telemetry retrieval confirmed
+
+The hosted `GetRecentTelemetry` endpoint has now been validated against the existing persisted Azure Table Storage readings.
+
+- `GET /api/GetRecentTelemetry?limit=10` returned both stored telemetry rows
+- `GET /api/GetRecentTelemetry?limit=1` returned only the most recently stored reading
+- `GET /api/GetRecentTelemetry?limit=0` returned HTTP `400 Bad Request`
+
+This establishes the read-back foundation needed for the planned dashboard path.
+
 ---
 
 ## Repository layout
@@ -106,6 +127,7 @@ hivewatch-cloud-iot/
 │       ├── HiveWatch.TelemetryIngestor.csproj
 │       ├── Models/
 │       │   ├── TelemetryReading.cs
+│       │   ├── TelemetryReadingRecord.cs
 │       │   └── TelemetryTableEntity.cs
 │       ├── Services/
 │       │   └── TelemetryStorageService.cs
@@ -150,15 +172,18 @@ This staged approach keeps the project traceable and makes the progression from 
 
 ---
 
-## Azure Function ingestion and persistence endpoint
+## Azure Function ingestion, persistence, and retrieval endpoints
 
-The current cloud component is a .NET 8 isolated Azure Function project containing an HTTP-triggered ingestion endpoint:
+The current cloud component is a .NET 8 isolated Azure Function project containing two HTTP-triggered endpoints:
 
 ```text
 IngestTelemetry
+GetRecentTelemetry
 ```
 
-The function currently:
+### `IngestTelemetry`
+
+The ingestion endpoint currently:
 
 - Accepts HTTP `POST` requests
 - Deserialises the incoming telemetry JSON
@@ -167,7 +192,7 @@ The function currently:
 - Returns a structured `accepted` response only after persistence succeeds
 - Returns a server-side error response if valid telemetry cannot be stored
 
-### Example telemetry payload
+#### Example telemetry payload
 
 ```json
 {
@@ -179,7 +204,7 @@ The function currently:
 }
 ```
 
-### Example accepted response shape
+#### Example accepted response shape
 
 ```json
 {
@@ -195,6 +220,51 @@ The function currently:
 }
 ```
 
+### `GetRecentTelemetry`
+
+The retrieval endpoint currently:
+
+- Accepts HTTP `GET` requests
+- Reads stored telemetry from Azure Table Storage
+- Orders readings by `ReceivedAtUtc` from newest to oldest
+- Returns a default of 20 readings if no `limit` is supplied
+- Accepts a positive whole-number `limit` query parameter
+- Enforces an internal maximum of 100 readings
+- Rejects invalid `limit` values with HTTP `400 Bad Request`
+
+#### Example retrieval route
+
+```text
+GET /api/GetRecentTelemetry?limit=10
+```
+
+#### Example retrieval response shape
+
+```json
+{
+  "status": "ok",
+  "count": 2,
+  "readings": [
+    {
+      "deviceId": "hivewatch-esp32-board2",
+      "sensorId": "ds18b20-1",
+      "type": "temperature",
+      "unit": "C",
+      "value": 19.05,
+      "receivedAtUtc": "2026-05-19T13:23:39.7973131+00:00"
+    },
+    {
+      "deviceId": "hivewatch-esp32-board2",
+      "sensorId": "ds18b20-1",
+      "type": "temperature",
+      "unit": "C",
+      "value": 18.42,
+      "receivedAtUtc": "2026-05-19T11:33:29.5058927+00:00"
+    }
+  ]
+}
+```
+
 ---
 
 ## Configuration and security notes
@@ -207,9 +277,9 @@ This repository is prepared for public sharing and intentionally excludes local 
 - Temporary Webhook.site URLs
 - Hosted Azure Function endpoint URLs
 
-### Runtime settings used for telemetry persistence
+### Runtime settings used for telemetry persistence and retrieval
 
-The persistence-enabled Function expects runtime configuration for:
+The Azure Function expects runtime configuration for:
 
 - `TelemetryStorageConnectionString` — required Azure Storage connection string
 - `TelemetryTableName` — optional table name override; the code defaults to `TelemetryReadings`
@@ -237,22 +307,22 @@ This kept the early HTTPS smoke tests simple. A hardened version would use prope
 
 The next development step is:
 
-> **Retrieve persisted temperature telemetry from Azure storage and expose it for recent/historical review through a retrieval and dashboard path.**
+> **Build the first dashboard-facing read path and monitoring view using the now-retrievable stored telemetry.**
 
 This will extend the current system from:
 
-> **validated and durable cloud telemetry persistence**
+> **validated cloud ingestion, durable persistence, and latest stored telemetry read-back**
 
 to:
 
-> **retrievable telemetry that can support monitoring views and later dashboard visualisation**
+> **stored telemetry surfaced through the planned dashboard layer for monitoring and later analytics work**
 
-and will move the project closer to its demonstration-ready monitoring layer.
+and will move the project closer to its demonstration-ready web application layer.
 
 ---
 
 ## Project direction
 
-HiveWatch Cloud IoT now has an established technical baseline: a real DS18B20 temperature probe, an ESP32 device capable of Wi-Fi telemetry transmission, a hosted Azure Function ingestion endpoint demonstrated end to end, and Azure Table Storage persistence for accepted telemetry.
+HiveWatch Cloud IoT now has an established technical baseline: a real DS18B20 temperature probe, an ESP32 device capable of Wi-Fi telemetry transmission, a hosted Azure Function ingestion endpoint demonstrated end to end, Azure Table Storage persistence for accepted telemetry, and a hosted retrieval endpoint that reads back the latest stored telemetry.
 
-The next milestone is telemetry retrieval and dashboard visualisation, building on the validated ingestion and storage foundation.
+The next milestone is dashboard foundation and visualisation, building on the validated ingestion, storage, and retrieval layers.
