@@ -10,6 +10,8 @@ namespace HiveWatch.TelemetryIngestor;
 
 public class Function1
 {
+    private const int DefaultRecentReadingLimit = 20;
+
     private readonly ILogger<Function1> _logger;
     private readonly TelemetryStorageService _telemetryStorageService;
 
@@ -112,6 +114,56 @@ public class Function1
             received_at_utc = receivedAtUtc,
             telemetry = reading
         });
+    }
+
+    [Function("GetRecentTelemetry")]
+    public async Task<IActionResult> GetRecentTelemetry(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req)
+    {
+        _logger.LogInformation("HiveWatch recent telemetry retrieval request received.");
+
+        int requestedLimit = DefaultRecentReadingLimit;
+        string limitText = req.Query["limit"].ToString();
+
+        if (!string.IsNullOrWhiteSpace(limitText))
+        {
+            if (!int.TryParse(limitText, out requestedLimit) || requestedLimit < 1)
+            {
+                return new BadRequestObjectResult(new
+                {
+                    status = "rejected",
+                    message = "The limit query parameter must be a positive whole number."
+                });
+            }
+        }
+
+        try
+        {
+            IReadOnlyList<TelemetryReadingRecord> readings =
+                await _telemetryStorageService.GetRecentAsync(
+                    requestedLimit,
+                    req.HttpContext.RequestAborted);
+
+            return new OkObjectResult(new
+            {
+                status = "ok",
+                count = readings.Count,
+                readings
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Recent telemetry retrieval failed.");
+
+            return new ObjectResult(new
+            {
+                status = "error",
+                message = "Stored telemetry could not be retrieved."
+            })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            };
+        }
     }
 
     private static List<string> Validate(TelemetryReading reading)

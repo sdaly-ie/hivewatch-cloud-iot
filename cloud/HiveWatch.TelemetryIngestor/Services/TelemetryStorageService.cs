@@ -1,3 +1,4 @@
+using System.Linq;
 using Azure.Data.Tables;
 using HiveWatch.TelemetryIngestor.Models;
 using Microsoft.Extensions.Configuration;
@@ -8,6 +9,7 @@ namespace HiveWatch.TelemetryIngestor.Services;
 public class TelemetryStorageService
 {
     private const string DefaultTableName = "TelemetryReadings";
+    private const int MaximumRecentReadingLimit = 100;
 
     private readonly TableClient _tableClient;
     private readonly ILogger<TelemetryStorageService> _logger;
@@ -60,6 +62,46 @@ public class TelemetryStorageService
             "Telemetry persisted to Azure Table Storage. PartitionKey={PartitionKey}, RowKey={RowKey}",
             entity.PartitionKey,
             entity.RowKey);
+    }
+
+    public async Task<IReadOnlyList<TelemetryReadingRecord>> GetRecentAsync(
+        int requestedLimit,
+        CancellationToken cancellationToken = default)
+    {
+        await _tableClient.CreateIfNotExistsAsync(cancellationToken);
+
+        int safeLimit = Math.Clamp(
+            requestedLimit,
+            1,
+            MaximumRecentReadingLimit);
+
+        List<TelemetryReadingRecord> readings = new();
+
+        await foreach (TelemetryTableEntity entity in _tableClient.QueryAsync<TelemetryTableEntity>(
+            cancellationToken: cancellationToken))
+        {
+            readings.Add(new TelemetryReadingRecord
+            {
+                DeviceId = entity.DeviceId,
+                SensorId = entity.SensorId,
+                Type = entity.Type,
+                Unit = entity.Unit,
+                Value = entity.Value,
+                ReceivedAtUtc = entity.ReceivedAtUtc
+            });
+        }
+
+        IReadOnlyList<TelemetryReadingRecord> recentReadings = readings
+            .OrderByDescending(reading => reading.ReceivedAtUtc)
+            .Take(safeLimit)
+            .ToList();
+
+        _logger.LogInformation(
+            "Telemetry retrieval completed. RequestedLimit={RequestedLimit}, ReturnedCount={ReturnedCount}",
+            requestedLimit,
+            recentReadings.Count);
+
+        return recentReadings;
     }
 
     private static string BuildRowKey(DateTimeOffset receivedAtUtc)
