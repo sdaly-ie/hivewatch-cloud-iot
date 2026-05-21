@@ -1,6 +1,7 @@
 # HiveWatch Cloud Internet of Things (IoT)
 
-HiveWatch Cloud IoT is a cloud-connected beehive monitoring capstone project.  
+HiveWatch Cloud IoT is a cloud-connected beehive monitoring capstone project.
+
 The current implementation focuses on a validated temperature telemetry path using:
 
 - An ESP32 development board
@@ -16,21 +17,33 @@ The project is being developed in technical stages, with each layer tested befor
 
 ## Current validated baseline
 
-The repository currently captures a completed device-to-cloud proof-of-concept path for:
+The repository currently captures four staged proof points:
 
-> **Live DS18B20 temperature reading -> ESP32 -> Wi-Fi / HTTPS -> hosted Azure Function ingestion endpoint**
+1. **Device-to-cloud ingestion**
+   Live DS18B20 temperature reading -> ESP32 -> Wi-Fi / HTTPS -> hosted Azure Function ingestion endpoint.
 
-It also captures a validated cloud persistence path for:
+2. **Cloud persistence**
+   Valid telemetry payload -> hosted Azure Function -> Azure Table Storage.
 
-> **Valid telemetry payload -> hosted Azure Function -> Azure Table Storage**
+3. **Hosted telemetry read-back**
+   Azure Table Storage -> hosted `GetRecentTelemetry` endpoint -> stored telemetry returned as JSON.
+
+4. **Local dashboard consumption**
+   Azure Table Storage -> hosted `GetRecentTelemetry` endpoint -> local ASP.NET Core Razor Pages dashboard.
 
 The hosted Azure Function accepts a JSON telemetry payload, validates the required fields, persists accepted telemetry to Azure Table Storage, and then returns a structured acknowledgement.
 
-The repository now also captures a validated telemetry read-back path for:
-
-> **Azure Table Storage -> hosted Azure Function retrieval endpoint -> latest stored telemetry returned as JSON**
-
 In this proof of concept, “recent” retrieval means the latest stored telemetry rows ordered by `ReceivedAtUtc` in descending order. It does not yet represent a fixed time-window query such as “last 24 hours”.
+
+The local dashboard currently displays:
+
+- the latest stored temperature reading
+- device and sensor identity
+- received timestamp and source
+- a recent readings table
+- freshness status for the latest stored telemetry
+
+This is a local dashboard milestone. It is not yet an Azure App Service deployment.
 
 ### Current status
 
@@ -43,8 +56,15 @@ In this proof of concept, “recent” retrieval means the latest stored telemet
 | Azure Function ingestion endpoint | Validated |
 | ESP32 -> hosted Azure Function telemetry POST | Validated |
 | Accepted telemetry -> Azure Table Storage persistence | Validated through local and hosted Function API checks |
-| Latest stored telemetry retrieval endpoint | Validated through local and hosted Function GET checks |
-| Dashboard foundation / visualisation | Next milestone |
+| Latest/recent stored telemetry retrieval endpoint | Validated through local and hosted Function GET checks |
+| Local dashboard latest-reading view | Validated locally |
+| Local dashboard recent readings table | Validated locally |
+| Local dashboard freshness status | Validated locally |
+| Dashboard alert states | Future milestone |
+| Dashboard analytics | Future milestone |
+| Azure dashboard deployment | Future milestone |
+| DevOps/testing evidence | In progress; branch/PR workflow and local build verification validated |
+| Sustained telemetry validation | Future milestone |
 
 ---
 
@@ -57,8 +77,9 @@ In this proof of concept, “recent” retrieval means the latest stored telemet
 | Connectivity and payload | Wi-Fi, HTTP/HTTPS POST, JSON telemetry payloads |
 | Cloud backend | Azure Functions, Azure Table Storage, .NET 8 isolated worker model, C# |
 | Storage integration | Azure.Data.Tables client library, `TelemetryReadings` table |
-| Retrieval path | HTTP GET Function endpoint, latest stored telemetry JSON read-back |
-| Validation and integration testing | Arduino Serial Monitor, Webhook.site remote POST smoke test, PowerShell REST checks, Azure Table Storage inspection |
+| Retrieval path | HTTP GET Function endpoint, latest/recent stored telemetry JSON read-back |
+| Dashboard | ASP.NET Core Razor Pages, typed `HttpClient`, Bootstrap-based Razor Pages UI |
+| Validation and integration testing | Arduino Serial Monitor, Webhook.site remote POST smoke test, PowerShell REST checks, Azure Table Storage inspection, local dashboard browser checks |
 | Version control | Git and GitHub |
 
 ---
@@ -71,13 +92,16 @@ flowchart LR
     B --> C[Wi-Fi / HTTPS POST]
     C --> D[Azure Function<br/>IngestTelemetry]
     D --> E[Azure Table Storage<br/>TelemetryReadings]
-    D --> F[Accepted JSON acknowledgement<br/>returned after persistence succeeds]
-    E --> G[Azure Function<br/>GetRecentTelemetry]
-    G --> H[Latest stored telemetry<br/>returned as JSON]
+    E --> F[Azure Function<br/>GetRecentTelemetry]
+    F --> G[ASP.NET Core Razor Pages<br/>local dashboard]
+    G --> H[Latest reading<br/>recent readings table<br/>freshness status]
 ```
 
-The cloud ingestion path, Azure Table Storage persistence path, and latest stored telemetry retrieval path have now been demonstrated in staged proof points.  
-The next milestone is to use the retrievable telemetry as the foundation for dashboard development and monitoring views.
+The cloud ingestion, persistence, retrieval, and local dashboard paths have now been validated through staged proof-of-concept tests.
+
+The current dashboard milestone is local and read-only. It displays the latest stored reading, recent persisted readings, and freshness status. It is not yet an Azure App Service deployment, full alerting system, analytics layer, or sustained-run dashboard.
+
+The `IngestTelemetry` endpoint returns an accepted JSON acknowledgement only after persistence succeeds. That acknowledgement is part of the ingestion API contract, but it is not shown as a separate branch in the simplified architecture diagram above.
 
 ---
 
@@ -99,18 +123,33 @@ This test run shows the ESP32 capturing a live DS18B20 temperature reading, post
 
 ![Azure Table Storage showing persisted HiveWatch telemetry rows](docs/images/azure-table-persistence.jpg)
 
-The persistence milestone has now been validated through both local and hosted Function API checks.  
+The persistence milestone has now been validated through both local and hosted Function API checks.
 A hosted PowerShell POST returned `accepted`, and the accepted telemetry was confirmed as stored rows in the Azure Table Storage `TelemetryReadings` table.
 
-### Latest stored telemetry retrieval confirmed
+### Latest/recent stored telemetry retrieval confirmed
 
-The hosted `GetRecentTelemetry` endpoint has now been validated against the existing persisted Azure Table Storage readings.
+The hosted `GetRecentTelemetry` endpoint has been validated against the existing persisted Azure Table Storage readings.
 
 - `GET /api/GetRecentTelemetry?limit=10` returned both stored telemetry rows
 - `GET /api/GetRecentTelemetry?limit=1` returned only the most recently stored reading
 - `GET /api/GetRecentTelemetry?limit=0` returned HTTP `400 Bad Request`
 
-This establishes the read-back foundation needed for the planned dashboard path.
+This established the read-back foundation needed for the dashboard path.
+
+### Local dashboard recent readings and freshness confirmed
+
+![Local dashboard showing recent readings and freshness status](docs/images/dashboard-recent-readings-freshness.jpg)
+
+The local ASP.NET Core Razor Pages dashboard has now been validated against the hosted `GetRecentTelemetry` endpoint.
+
+- The dashboard called the hosted retrieval endpoint with `limit=10`
+- The hosted endpoint returned HTTP `200`
+- The dashboard displayed two persisted readings: `19.05 °C` and `18.42 °C`
+- The latest reading remained visible in the summary card
+- The dashboard displayed a recent readings table
+- The dashboard displayed `Stale` freshness status, which was expected because the latest stored reading was from 19 May
+
+This confirms local dashboard consumption of the hosted retrieval path.
 
 ---
 
@@ -134,10 +173,28 @@ hivewatch-cloud-iot/
 │       └── Properties/
 │           └── launchSettings.json
 │
+├── dashboard/
+│   ├── HiveWatch.Dashboard.slnx
+│   └── HiveWatch.Dashboard/
+│       ├── Program.cs
+│       ├── HiveWatch.Dashboard.csproj
+│       ├── Models/
+│       │   ├── LatestTelemetryResult.cs
+│       │   ├── TelemetryApiResponse.cs
+│       │   └── TelemetryReadingRecord.cs
+│       ├── Services/
+│       │   └── TelemetryApiClient.cs
+│       ├── Pages/
+│       │   ├── Index.cshtml
+│       │   ├── Index.cshtml.cs
+│       │   └── Shared/
+│       └── wwwroot/
+│
 ├── docs/
 │   └── images/
 │       ├── azure-table-persistence.jpg
 │       ├── azure-function-post-success.jpg
+│       ├── dashboard-recent-readings-freshness.jpg
 │       └── esp32-ds18b20-bench-setup.jpg
 │
 ├── firmware/
@@ -307,22 +364,28 @@ This kept the early HTTPS smoke tests simple. A hardened version would use prope
 
 The next development step is:
 
-> **Build the first dashboard-facing read path and monitoring view using the now-retrievable stored telemetry.**
+> **Build on the local dashboard foundation by adding dashboard alert states, basic analytics, deployment, and sustained-run validation.**
 
 This will extend the current system from:
 
-> **validated cloud ingestion, durable persistence, and latest stored telemetry read-back**
+> **stored telemetry surfaced through a local dashboard with latest reading, recent readings, and freshness status**
 
 to:
 
-> **stored telemetry surfaced through the planned dashboard layer for monitoring and later analytics work**
+> **a more complete monitoring dashboard with alert state, summary analytics, and a deployment path**
 
-and will move the project closer to its demonstration-ready web application layer.
+The next technical priorities are:
+
+1. Temperature threshold alert state
+2. Telemetry freshness / device-silent alert state refinement
+3. Basic analytics such as latest, minimum, maximum, average, and simple trend
+4. Azure dashboard deployment through the planned App Service route or documented fallback
+5. Sustained bench telemetry validation
 
 ---
 
 ## Project direction
 
-HiveWatch Cloud IoT now has an established technical baseline: a real DS18B20 temperature probe, an ESP32 device capable of Wi-Fi telemetry transmission, a hosted Azure Function ingestion endpoint demonstrated end to end, Azure Table Storage persistence for accepted telemetry, and a hosted retrieval endpoint that reads back the latest stored telemetry.
+HiveWatch Cloud IoT now has an established technical baseline: a real DS18B20 temperature probe, an ESP32 device capable of Wi-Fi telemetry transmission, a hosted Azure Function ingestion endpoint demonstrated end to end, Azure Table Storage persistence for accepted telemetry, a hosted retrieval endpoint that reads back stored telemetry, and a local Razor Pages dashboard that displays latest and recent readings with freshness status.
 
-The next milestone is dashboard foundation and visualisation, building on the validated ingestion, storage, and retrieval layers.
+The next milestone is to mature the dashboard from local monitoring foundation toward alerting, analytics, deployment, and sustained validation, while keeping heavier items such as IoT Hub, Cosmos DB, Terraform, external notifications, and extra sensors as stretch goals only.
