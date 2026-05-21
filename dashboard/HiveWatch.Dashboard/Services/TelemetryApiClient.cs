@@ -19,7 +19,9 @@ public class TelemetryApiClient
         _logger = logger;
     }
 
-    public async Task<LatestTelemetryResult> GetLatestReadingAsync(CancellationToken cancellationToken)
+    public async Task<LatestTelemetryResult> GetRecentReadingsAsync(
+        int limit,
+        CancellationToken cancellationToken)
     {
         string? endpoint = _configuration["TelemetryApi:RecentTelemetryUrl"];
 
@@ -32,8 +34,9 @@ public class TelemetryApiClient
             };
         }
 
+        int safeLimit = Math.Clamp(limit, 1, 100);
         string separator = endpoint.Contains('?') ? "&" : "?";
-        string requestUrl = $"{endpoint}{separator}limit=1";
+        string requestUrl = $"{endpoint}{separator}limit={safeLimit}";
 
         try
         {
@@ -58,9 +61,9 @@ public class TelemetryApiClient
                 },
                 cancellationToken);
 
-            TelemetryReadingRecord? latestReading = payload?.Readings.FirstOrDefault();
+            List<TelemetryReadingRecord> readings = payload?.Readings ?? new();
 
-            if (latestReading is null)
+            if (readings.Count == 0)
             {
                 return new LatestTelemetryResult
                 {
@@ -72,8 +75,9 @@ public class TelemetryApiClient
             return new LatestTelemetryResult
             {
                 Success = true,
-                Message = "Latest telemetry retrieved successfully.",
-                LatestReading = latestReading
+                Message = $"Retrieved {readings.Count} recent telemetry reading(s).",
+                LatestReading = readings.FirstOrDefault(),
+                RecentReadings = readings
             };
         }
         catch (Exception ex)
