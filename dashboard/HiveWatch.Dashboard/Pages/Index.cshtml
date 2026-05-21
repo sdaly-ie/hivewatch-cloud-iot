@@ -1,10 +1,79 @@
-ï»¿@page
+@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "HiveWatch Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="mb-4">
+    <h1 class="display-5">HiveWatch Cloud Edition IoT</h1>
+    <p class="lead">
+        First dashboard-facing monitoring view using the hosted GetRecentTelemetry retrieval path.
+    </p>
+</section>
+
+@if (Model.HasError)
+{
+    <div class="alert alert-warning" role="alert">
+        <strong>Status:</strong> @Model.StatusMessage
+    </div>
+}
+else
+{
+    <div class="alert alert-success" role="alert">
+        <strong>Status:</strong> @Model.StatusMessage
+    </div>
+}
+
+@if (Model.LatestReading is not null)
+{
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 card-title">Latest temperature</h2>
+                    <p class="display-6 mb-0">
+                        @Model.LatestReading.Value.ToString("0.00") °@Model.LatestReading.Unit
+                    </p>
+                    <p class="text-muted mb-0">
+                        Sensor type: @Model.LatestReading.Type
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 card-title">Device</h2>
+                    <p class="mb-1"><strong>Device ID:</strong> @Model.LatestReading.DeviceId</p>
+                    <p class="mb-0"><strong>Sensor ID:</strong> @Model.LatestReading.SensorId</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 card-title">Received</h2>
+                    <p class="mb-1">
+                        @Model.LatestReading.ReceivedAtUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
+                    </p>
+                    <p class="text-muted mb-0">
+                        Source: Azure Table Storage via GetRecentTelemetry
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="h5 card-title">No telemetry displayed yet</h2>
+            <p class="mb-0">
+                Configure the hosted GetRecentTelemetry endpoint before using this page as a live monitoring view.
+            </p>
+        </div>
+    </div>
+}
