@@ -7,7 +7,7 @@
 <section class="mb-4">
     <h1 class="display-5">HiveWatch Cloud Edition IoT</h1>
     <p class="lead">
-        First dashboard-facing monitoring view using the hosted GetRecentTelemetry retrieval path.
+        Dashboard-facing monitoring view using the hosted GetRecentTelemetry retrieval path.
     </p>
 </section>
 
@@ -26,13 +26,13 @@ else
 
 @if (Model.LatestReading is not null)
 {
-    <div class="row g-3">
-        <div class="col-md-4">
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <h2 class="h5 card-title">Latest temperature</h2>
                     <p class="display-6 mb-0">
-                        @Model.LatestReading.Value.ToString("0.00") °@Model.LatestReading.Unit
+                        @Model.LatestReading.Value.ToString("0.00") ï¿½@Model.LatestReading.Unit
                     </p>
                     <p class="text-muted mb-0">
                         Sensor type: @Model.LatestReading.Type
@@ -41,7 +41,7 @@ else
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <h2 class="h5 card-title">Device</h2>
@@ -51,7 +51,7 @@ else
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <h2 class="h5 card-title">Received</h2>
@@ -64,7 +64,63 @@ else
                 </div>
             </div>
         </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 card-title">Freshness</h2>
+                    <div class="alert @Model.FreshnessAlertClass py-2 mb-2" role="alert">
+                        <strong>@Model.FreshnessStatus</strong>
+                    </div>
+                    <p class="text-muted mb-0">
+                        @Model.FreshnessMessage
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <section class="card shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Recent readings</h2>
+                    <p class="text-muted mb-0">
+                        Showing up to 10 latest persisted telemetry records.
+                    </p>
+                </div>
+                <span class="badge text-bg-secondary">
+                    @Model.RecentReadings.Count reading(s)
+                </span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Received UTC</th>
+                            <th scope="col">Device</th>
+                            <th scope="col">Sensor</th>
+                            <th scope="col">Type</th>
+                            <th scope="col" class="text-end">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var reading in Model.RecentReadings)
+                    {
+                        <tr>
+                            <td>@reading.ReceivedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            <td>@reading.DeviceId</td>
+                            <td>@reading.SensorId</td>
+                            <td>@reading.Type</td>
+                            <td class="text-end">@reading.Value.ToString("0.00") ï¿½@reading.Unit</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
 }
 else
 {

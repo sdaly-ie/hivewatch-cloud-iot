@@ -7,4 +7,6 @@ public class LatestTelemetryResult
     public string Message { get; set; } = string.Empty;
 
     public TelemetryReadingRecord? LatestReading { get; set; }
+
+    public List<TelemetryReadingRecord> RecentReadings { get; set; } = new();
 }
