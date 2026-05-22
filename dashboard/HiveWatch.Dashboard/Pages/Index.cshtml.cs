@@ -10,16 +10,23 @@ public class IndexModel : PageModel
     private static readonly TimeSpan FreshTelemetryThreshold = TimeSpan.FromHours(1);
 
     private readonly TelemetryApiClient _telemetryApiClient;
+    private readonly BroodTemperatureAlertEvaluator _alertEvaluator;
 
-    public IndexModel(TelemetryApiClient telemetryApiClient)
+    public IndexModel(
+        TelemetryApiClient telemetryApiClient,
+        BroodTemperatureAlertEvaluator alertEvaluator)
     {
         _telemetryApiClient = telemetryApiClient;
+        _alertEvaluator = alertEvaluator;
     }
 
     public TelemetryReadingRecord? LatestReading { get; private set; }
 
     public IReadOnlyList<TelemetryReadingRecord> RecentReadings { get; private set; } =
         Array.Empty<TelemetryReadingRecord>();
+
+    public BroodTemperatureAlertResult TemperatureAlert { get; private set; } =
+        BroodTemperatureAlertResult.NoTelemetry();
 
     public string StatusMessage { get; private set; } = "Telemetry has not been checked yet.";
 
@@ -44,6 +51,7 @@ public class IndexModel : PageModel
         HasError = !result.Success;
 
         UpdateFreshnessStatus();
+        TemperatureAlert = _alertEvaluator.Evaluate(LatestReading, RecentReadings);
     }
 
     private void UpdateFreshnessStatus()
