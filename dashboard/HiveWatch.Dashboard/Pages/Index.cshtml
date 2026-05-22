@@ -32,7 +32,7 @@ else
                 <div class="card-body">
                     <h2 class="h5 card-title">Latest temperature</h2>
                     <p class="display-6 mb-0">
-                        @Model.LatestReading.Value.ToString("0.00") �@Model.LatestReading.Unit
+                        @Model.LatestReading.Value.ToString("0.00") &deg;@Model.LatestReading.Unit
                     </p>
                     <p class="text-muted mb-0">
                         Sensor type: @Model.LatestReading.Type
@@ -80,6 +80,59 @@ else
         </div>
     </div>
 
+    <section class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Brood-area alert status</h2>
+                    <p class="text-muted mb-0">
+                        Applies evidence-informed brood-area thresholds to the latest persisted temperature reading.
+                        This is a monitoring risk signal, not a diagnosis of brood damage.
+                    </p>
+                </div>
+                <span class="badge @Model.TemperatureAlert.BootstrapBadgeClass">
+                    @Model.TemperatureAlert.AlertTrafficLight
+                </span>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <h3 class="h6">Current temperature band</h3>
+                    <div class="alert @Model.TemperatureAlert.BootstrapAlertClass mb-2" role="alert">
+                        <strong>@Model.TemperatureAlert.AlertCategoryDescription</strong>
+                        <div>@Model.TemperatureAlert.BroodAreaTemperatureBand</div>
+                    </div>
+                    <p class="small text-muted mb-0">
+                        Evidence confidence: @Model.TemperatureAlert.EvidenceConfidence
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <h3 class="h6">Sustained alert check</h3>
+                    <div class="alert @Model.TemperatureAlert.SustainedAlertClass mb-2" role="alert">
+                        <strong>@Model.TemperatureAlert.SustainedStatus</strong>
+                    </div>
+                    <p class="small text-muted mb-1">
+                        @Model.TemperatureAlert.SustainedMessage
+                    </p>
+                    <p class="small text-muted mb-0">
+                        Readings evaluated: @Model.TemperatureAlert.ReadingsEvaluated
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <h3 class="h6">Meaning</h3>
+                    <p class="mb-2">
+                        @Model.TemperatureAlert.Meaning
+                    </p>
+                    <p class="small text-muted mb-0">
+                        Sustained definition: @Model.TemperatureAlert.SustainedDefinition
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="card shadow-sm">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -113,7 +166,7 @@ else
                             <td>@reading.DeviceId</td>
                             <td>@reading.SensorId</td>
                             <td>@reading.Type</td>
-                            <td class="text-end">@reading.Value.ToString("0.00") �@reading.Unit</td>
+                            <td class="text-end">@reading.Value.ToString("0.00") &deg;@reading.Unit</td>
                         </tr>
                     }
                     </tbody>
