@@ -17,7 +17,7 @@ The project is being developed in technical stages, with each layer tested befor
 
 ## Current validated baseline
 
-The repository currently captures four staged proof points:
+The repository currently captures five staged proof-of-concept milestones:
 
 1. **Device-to-cloud ingestion**
    Live DS18B20 temperature reading -> ESP32 -> Wi-Fi / HTTPS -> hosted Azure Function ingestion endpoint.
@@ -30,6 +30,9 @@ The repository currently captures four staged proof points:
 
 4. **Local dashboard consumption**
    Azure Table Storage -> hosted `GetRecentTelemetry` endpoint -> local ASP.NET Core Razor Pages dashboard.
+
+5. **Local dashboard alert-state classification**
+   Latest persisted temperature reading -> evidence-informed brood-area alert band -> sustained-alert data-sufficiency check.
 
 The hosted Azure Function accepts a JSON telemetry payload, validates the required fields, persists accepted telemetry to Azure Table Storage, and then returns a structured acknowledgement.
 
@@ -60,7 +63,8 @@ This is a local dashboard milestone. It is not yet an Azure App Service deployme
 | Local dashboard latest-reading view | Validated locally |
 | Local dashboard recent readings table | Validated locally |
 | Local dashboard freshness status | Validated locally |
-| Dashboard alert states | Future milestone |
+| Local dashboard brood-area alert status | Validated locally |
+| Sustained-alert data-sufficiency handling | Validated locally |
 | Dashboard analytics | Future milestone |
 | Azure dashboard deployment | Future milestone |
 | DevOps/testing evidence | In progress; branch/PR workflow and local build verification validated |
@@ -94,7 +98,7 @@ flowchart LR
     D --> E[Azure Table Storage<br/>TelemetryReadings]
     E --> F[Azure Function<br/>GetRecentTelemetry]
     F --> G[ASP.NET Core Razor Pages<br/>local dashboard]
-    G --> H[Latest reading<br/>recent readings table<br/>freshness status]
+    G --> H[Latest reading<br/>recent readings table<br/>freshness status<br/>brood-area alert status]
 ```
 
 The cloud ingestion, persistence, retrieval, and local dashboard paths have now been validated through staged proof-of-concept tests.
@@ -151,6 +155,21 @@ The local ASP.NET Core Razor Pages dashboard has now been validated against the 
 
 This confirms local dashboard consumption of the hosted retrieval path.
 
+### Local dashboard brood-area alert status confirmed
+
+![Local dashboard showing brood-area alert status](docs/images/dashboard-brood-alert-status.jpg)
+
+The local ASP.NET Core Razor Pages dashboard now applies evidence-informed brood-area temperature thresholds to the latest persisted temperature reading.
+
+- The dashboard displayed a new brood-area alert status section
+- The latest persisted bench reading of `19.05 °C` was classified as `Critical cold deviation`
+- The dashboard displayed the threshold band `< 33.0 °C`
+- The dashboard showed evidence confidence as `Moderate-High`
+- The sustained alert check showed `Not enough data`, because only two recent temperature readings were available
+- The wording clearly frames the alert as a monitoring risk/status signal, not a diagnosis of brood damage
+
+This confirms local dashboard alert-state classification while preserving the boundary that the current stored values are bench validation readings, not genuine brood-area readings.
+
 ---
 
 ## Repository layout
@@ -194,6 +213,7 @@ hivewatch-cloud-iot/
 │   └── images/
 │       ├── azure-table-persistence.jpg
 │       ├── azure-function-post-success.jpg
+│       ├── dashboard-brood-alert-status.jpg
 │       ├── dashboard-recent-readings-freshness.jpg
 │       └── esp32-ds18b20-bench-setup.jpg
 │
@@ -364,28 +384,27 @@ This kept the early HTTPS smoke tests simple. A hardened version would use prope
 
 The next development step is:
 
-> **Build on the local dashboard foundation by adding dashboard alert states, basic analytics, deployment, and sustained-run validation.**
+> **Build on the local dashboard foundation by adding basic analytics, deployment, and sustained-run validation.**
 
 This will extend the current system from:
 
-> **stored telemetry surfaced through a local dashboard with latest reading, recent readings, and freshness status**
+> **stored telemetry surfaced through a local dashboard with latest reading, recent readings, freshness status, and brood-area alert status**
 
 to:
 
-> **a more complete monitoring dashboard with alert state, summary analytics, and a deployment path**
+> **a more complete monitoring dashboard with summary analytics, Azure deployment, and sustained validation evidence**
 
 The next technical priorities are:
 
-1. Temperature threshold alert state
-2. Telemetry freshness / device-silent alert state refinement
-3. Basic analytics such as latest, minimum, maximum, average, and simple trend
-4. Azure dashboard deployment through the planned App Service route or documented fallback
-5. Sustained bench telemetry validation
+1. Basic analytics such as latest, minimum, maximum, average, and simple trend
+2. Azure dashboard deployment through the planned App Service route or documented fallback
+3. Sustained bench telemetry validation
+4. Optional alert-state refinement once fresh telemetry cadence evidence is available
 
 ---
 
 ## Project direction
 
-HiveWatch Cloud IoT now has an established technical baseline: a real DS18B20 temperature probe, an ESP32 device capable of Wi-Fi telemetry transmission, a hosted Azure Function ingestion endpoint demonstrated end to end, Azure Table Storage persistence for accepted telemetry, a hosted retrieval endpoint that reads back stored telemetry, and a local Razor Pages dashboard that displays latest and recent readings with freshness status.
+HiveWatch Cloud IoT now has an established technical baseline: a real DS18B20 temperature probe, an ESP32 device capable of Wi-Fi telemetry transmission, a hosted Azure Function ingestion endpoint demonstrated end to end, Azure Table Storage persistence for accepted telemetry, a hosted retrieval endpoint that reads back stored telemetry, and a local Razor Pages dashboard that displays latest and recent readings, freshness status, and brood-area alert status.
 
-The next milestone is to mature the dashboard from local monitoring foundation toward alerting, analytics, deployment, and sustained validation, while keeping heavier items such as IoT Hub, Cosmos DB, Terraform, external notifications, and extra sensors as stretch goals only.
+The next milestone is to mature the dashboard from local monitoring foundation toward basic analytics, Azure deployment, sustained validation, and later alert-state refinement, while keeping heavier items such as IoT Hub, Cosmos DB, Terraform, external notifications, and extra sensors as stretch goals only.
