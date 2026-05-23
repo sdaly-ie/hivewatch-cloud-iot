@@ -1,54 +1,116 @@
 # HiveWatch Cloud Internet of Things (IoT)
 
-HiveWatch Cloud IoT is a cloud-connected beehive monitoring capstone project.
+HiveWatch Cloud IoT is built around a simple problem: a beekeeper cannot protect what they cannot see between inspections.
 
-The current implementation focuses on a validated temperature telemetry path using:
+Inside every productive hive is a nursery called the brood nest. This is where eggs, larvae and developing young bees depend on stable warmth. When that temperature falls, rises or becomes unstable for long enough, the colony may face higher risk of stress, poor development, disease related problems or other issues that need attention.
 
-- An ESP32 development board
-- A waterproof DS18B20 temperature probe
-- Staged firmware proofs
-- A .NET 8 isolated Azure Function backend
-- Azure Table Storage for durable telemetry persistence
-- A hosted read-back endpoint for the latest stored telemetry
+HiveWatch gives beekeepers remote visibility across dispersed apiary sites. Using a physical temperature sensor, it captures hive readings, sends them to the cloud, stores the data, and presents recent readings, alert bands, and whether the latest hive reading is fresh or stale on a dashboard that can be checked from home or while on the go.
 
-The project is being developed in technical stages, with each layer tested before moving to the next.
+The system does not diagnose disease, queen failure, brood damage or colony loss. Instead, it gives beekeepers early warning signals so they can decide which hives deserve inspection first and combine remote telemetry with practical judgement at the hive.
+
+The goal is simple: fewer blind spots, faster attention and better informed hive management decisions.
+
+---
+
+## At a glance
+
+| Area | Current position |
+|---|---|
+| Project type | Solo CT-5222 capstone project |
+| Main purpose | Remote beehive temperature monitoring for dispersed apiary sites |
+| Core sensor | DS18B20 waterproof temperature probe |
+| Device layer | ESP32 development board running Arduino/C++ firmware |
+| Cloud backend | C#/.NET 8 isolated Azure Functions |
+| Storage layer | Azure Table Storage using the `TelemetryReadings` table |
+| Retrieval path | Hosted `GetRecentTelemetry` endpoint |
+| Dashboard | Local ASP.NET Core Razor Pages dashboard |
+| Current dashboard behaviour | Latest reading, recent readings, fresh or stale state, and temperature alert band |
+| Current validation status | Full bench chain validated on 23 May 2026 |
+| Key boundary | Bench validated prototype, not a production hive monitoring system or biological diagnosis tool |
 
 ---
 
 ## Current validated baseline
 
-The repository currently captures five staged proof-of-concept milestones:
+The current implementation validates a real physical temperature reading travelling through the complete baseline path:
 
-1. **Device-to-cloud ingestion**
-   Live DS18B20 temperature reading -> ESP32 -> Wi-Fi / HTTPS -> hosted Azure Function ingestion endpoint.
+| Step | Component | Role |
+|---:|---|---|
+| 1 | DS18B20 waterproof temperature probe | Captures the hive temperature reading |
+| 2 | ESP32 firmware | Reads the sensor and prepares the telemetry payload |
+| 3 | Wi-Fi and HTTPS POST | Sends the reading from the device to the cloud |
+| 4 | Hosted C#/.NET Azure Function | Accepts and validates incoming telemetry |
+| 5 | Azure Table Storage | Persists accepted readings in `TelemetryReadings` |
+| 6 | Hosted `GetRecentTelemetry` endpoint | Retrieves recent stored telemetry |
+| 7 | Local ASP.NET Core Razor Pages dashboard | Displays latest reading, recent readings, fresh or stale state, and alert band |
 
-2. **Cloud persistence**
-   Valid telemetry payload -> hosted Azure Function -> Azure Table Storage.
+On 23 May 2026, a live DS18B20 bench reading of `19.50 °C` was captured by the ESP32 device, posted over Wi-Fi and HTTPS to the hosted Azure Function, accepted with HTTP `200`, persisted in Azure Table Storage, retrieved through `GetRecentTelemetry`, and displayed in the local Razor Pages dashboard as the latest reading with Fresh status and brood temperature alert classification.
 
-3. **Hosted telemetry read-back**
-   Azure Table Storage -> hosted `GetRecentTelemetry` endpoint -> stored telemetry returned as JSON.
+This result validates the current system path under controlled bench conditions. It does not represent in-hive field validation, production alerting, or a completed sustained telemetry run.
 
-4. **Local dashboard consumption**
-   Azure Table Storage -> hosted `GetRecentTelemetry` endpoint -> local ASP.NET Core Razor Pages dashboard.
+---
 
-5. **Local dashboard alert-state classification**
-   Latest persisted temperature reading -> evidence-informed brood-area alert band -> sustained-alert data-sufficiency check.
+## How it works
 
-The hosted Azure Function accepts a JSON telemetry payload, validates the required fields, persists accepted telemetry to Azure Table Storage, and then returns a structured acknowledgement.
+The validated baseline moves a real hive temperature reading through the following path:
 
-In this proof of concept, “recent” retrieval means the latest stored telemetry rows ordered by `ReceivedAtUtc` in descending order. It does not yet represent a fixed time-window query such as “last 24 hours”.
+```mermaid
+flowchart LR
+    A["DS18B20 temperature probe"] --> B["ESP32 firmware"]
+    B --> C["Wi-Fi and HTTPS POST"]
+    C --> D["Hosted C#/.NET Azure Function"]
+    D --> E["Azure Table Storage"]
+    E --> F["GetRecentTelemetry endpoint"]
+    F --> G["Local ASP.NET Core Razor Pages dashboard"]
+    G --> H["Latest reading, recent readings, fresh or stale status, and alert band"]
+```
+
+### Architecture notes
+
+| Layer | Role |
+|---|---|
+| Sensor | Captures a hive temperature reading using a DS18B20 waterproof probe |
+| ESP32 firmware | Reads the probe, prepares a JSON telemetry payload, and sends it over Wi-Fi |
+| `IngestTelemetry` | Validates incoming telemetry and stores accepted readings |
+| Azure Table Storage | Provides durable storage for accepted telemetry records |
+| `GetRecentTelemetry` | Reads back recent stored telemetry for dashboard use |
+| Razor Pages dashboard | Displays latest reading, recent readings, fresh or stale state, and alert band |
+
+---
+
+## Dashboard behaviour
 
 The local dashboard currently displays:
 
-- the latest stored temperature reading
-- device and sensor identity
-- received timestamp and source
-- a recent readings table
-- freshness status for the latest stored telemetry
+| Dashboard element | Purpose |
+|---|---|
+| Latest temperature reading | Shows the newest stored hive temperature reading returned by the cloud retrieval path |
+| Recent readings table | Shows recent persisted telemetry records |
+| Fresh or stale state | Shows whether the latest hive reading still reflects recent telemetry |
+| Temperature alert band | Classifies the latest reading against evidence informed brood nest temperature bands |
+| Sustained alert data sufficiency | Separates an immediate out of range reading from a sustained alert state requiring enough recent readings |
 
-This is a local dashboard milestone. It is not yet an Azure App Service deployment.
+The dashboard is currently local and read only. Azure dashboard deployment remains a planned milestone.
 
-### Current status
+---
+
+## Temperature alert boundary
+
+HiveWatch uses temperature bands as monitoring signals. They help identify when a hive may deserve closer inspection, but they do not prove brood damage, disease, queen failure or colony loss.
+
+Current alert wording is intentionally cautious:
+
+| Reading pattern | Meaning in HiveWatch |
+|---|---|
+| Temperature outside expected range | The hive may deserve inspection or closer attention |
+| Latest reading is stale | The dashboard may no longer reflect current hive conditions |
+| Not enough readings for sustained alert | The current value can be classified, but sustained confirmation is not yet available |
+
+This boundary matters because a bench temperature reading can validate system behaviour without proving the biological condition of a real hive.
+
+---
+
+## Current status
 
 | Area | Status |
 |---|---|
@@ -57,22 +119,52 @@ This is a local dashboard milestone. It is not yet an Azure App Service deployme
 | ESP32 Wi-Fi connectivity | Validated |
 | Remote telemetry POST smoke test | Validated |
 | Azure Function ingestion endpoint | Validated |
-| ESP32 -> hosted Azure Function telemetry POST | Validated |
-| Accepted telemetry -> Azure Table Storage persistence | Validated through local and hosted Function API checks |
-| Latest/recent stored telemetry retrieval endpoint | Validated through local and hosted Function GET checks |
-| Local dashboard latest-reading view | Validated locally |
+| ESP32 to hosted Azure Function telemetry POST | Validated |
+| Accepted telemetry to Azure Table Storage persistence | Validated |
+| Latest and recent stored telemetry retrieval endpoint | Validated |
+| Local dashboard latest reading view | Validated locally |
 | Local dashboard recent readings table | Validated locally |
-| Local dashboard freshness status | Validated locally |
-| Local dashboard brood-area alert status | Validated locally |
-| Sustained-alert data-sufficiency handling | Validated locally |
+| Local dashboard fresh or stale state | Validated locally |
+| Local dashboard brood temperature alert status | Validated locally |
+| Fresh full chain bench validation | Validated on 23 May 2026 |
 | Dashboard analytics | Future milestone |
 | Azure dashboard deployment | Future milestone |
-| DevOps/testing evidence | In progress; branch/PR workflow and local build verification validated |
+| CI/CD refinement | Future milestone |
 | Sustained telemetry validation | Future milestone |
 
 ---
 
-## Tech stack
+## Validation evidence
+
+### Fresh full chain validation, 23 May 2026
+
+The fresh validation evidence is stored in:
+
+```text
+docs/evidence/2026-05-23-fresh-full-chain-validation/
+```
+
+| Evidence artefact | What it demonstrates |
+|---|---|
+| [`serial-monitor-success.jpg`](docs/evidence/2026-05-23-fresh-full-chain-validation/serial-monitor-success.jpg) | ESP32 Wi-Fi connection, DS18B20 reading, JSON payload, hosted Azure Function POST, HTTP 200 response, and accepted telemetry |
+| [`azure-table-storage-row.jpg`](docs/evidence/2026-05-23-fresh-full-chain-validation/azure-table-storage-row.jpg) | New `19.5 °C` telemetry row persisted in Azure Table Storage |
+| [`dashboard-fresh-alert-status.jpg`](docs/evidence/2026-05-23-fresh-full-chain-validation/dashboard-fresh-alert-status.jpg) | Dashboard retrieved the fresh row, displayed Fresh status, showed recent readings, and classified the alert band |
+
+![Fresh full chain dashboard validation](docs/evidence/2026-05-23-fresh-full-chain-validation/dashboard-fresh-alert-status.jpg)
+
+### Earlier staged validation evidence
+
+| Evidence | Screenshot |
+|---|---|
+| ESP32 and DS18B20 temperature probe bench setup | [`docs/images/esp32-ds18b20-bench-setup.jpg`](docs/images/esp32-ds18b20-bench-setup.jpg) |
+| Hosted Azure Function telemetry POST success | [`docs/images/azure-function-post-success.jpg`](docs/images/azure-function-post-success.jpg) |
+| Azure Table Storage persistence | [`docs/images/azure-table-persistence.jpg`](docs/images/azure-table-persistence.jpg) |
+| Local dashboard recent readings and fresh or stale state | [`docs/images/dashboard-recent-readings-freshness.jpg`](docs/images/dashboard-recent-readings-freshness.jpg) |
+| Local dashboard brood temperature alert status | [`docs/images/dashboard-brood-alert-status.jpg`](docs/images/dashboard-brood-alert-status.jpg) |
+
+---
+
+## Technology stack
 
 | Area | Technologies used |
 |---|---|
@@ -81,160 +173,16 @@ This is a local dashboard milestone. It is not yet an Azure App Service deployme
 | Connectivity and payload | Wi-Fi, HTTP/HTTPS POST, JSON telemetry payloads |
 | Cloud backend | Azure Functions, Azure Table Storage, .NET 8 isolated worker model, C# |
 | Storage integration | Azure.Data.Tables client library, `TelemetryReadings` table |
-| Retrieval path | HTTP GET Function endpoint, latest/recent stored telemetry JSON read-back |
-| Dashboard | ASP.NET Core Razor Pages, typed `HttpClient`, Bootstrap-based Razor Pages UI |
+| Retrieval path | HTTP GET Function endpoint, latest and recent stored telemetry JSON read back |
+| Dashboard | ASP.NET Core Razor Pages, typed `HttpClient`, Bootstrap based Razor Pages UI |
 | Validation and integration testing | Arduino Serial Monitor, Webhook.site remote POST smoke test, PowerShell REST checks, Azure Table Storage inspection, local dashboard browser checks |
-| Version control | Git and GitHub |
-
----
-
-## Current telemetry architecture
-
-```mermaid
-flowchart LR
-    A[DS18B20 temperature probe] --> B[ESP32 firmware]
-    B --> C[Wi-Fi / HTTPS POST]
-    C --> D[Azure Function<br/>IngestTelemetry]
-    D --> E[Azure Table Storage<br/>TelemetryReadings]
-    E --> F[Azure Function<br/>GetRecentTelemetry]
-    F --> G[ASP.NET Core Razor Pages<br/>local dashboard]
-    G --> H[Latest reading<br/>recent readings table<br/>freshness status<br/>brood-area alert status]
-```
-
-The cloud ingestion, persistence, retrieval, and local dashboard paths have now been validated through staged proof-of-concept tests.
-
-The current dashboard milestone is local and read-only. It displays the latest stored reading, recent persisted readings, and freshness status. It is not yet an Azure App Service deployment, full alerting system, analytics layer, or sustained-run dashboard.
-
-The `IngestTelemetry` endpoint returns an accepted JSON acknowledgement only after persistence succeeds. That acknowledgement is part of the ingestion API contract, but it is not shown as a separate branch in the simplified architecture diagram above.
-
----
-
-## Validation evidence
-
-### Bench prototype
-
-![ESP32 and DS18B20 temperature-probe bench setup](docs/images/esp32-ds18b20-bench-setup.jpg)
-
-The current device-layer proof uses a real ESP32 board wired to a waterproof DS18B20 temperature probe on a breadboard.
-
-### Hosted Azure Function telemetry POST success
-
-![Hosted Azure Function telemetry POST success](docs/images/azure-function-post-success.jpg)
-
-This test run shows the ESP32 capturing a live DS18B20 temperature reading, posting it to the hosted Azure Function ingestion endpoint, receiving HTTP `200`, and getting a structured `"status":"accepted"` response.
-
-### Azure Table Storage persistence confirmed
-
-![Azure Table Storage showing persisted HiveWatch telemetry rows](docs/images/azure-table-persistence.jpg)
-
-The persistence milestone has now been validated through both local and hosted Function API checks.
-A hosted PowerShell POST returned `accepted`, and the accepted telemetry was confirmed as stored rows in the Azure Table Storage `TelemetryReadings` table.
-
-### Latest/recent stored telemetry retrieval confirmed
-
-The hosted `GetRecentTelemetry` endpoint has been validated against the existing persisted Azure Table Storage readings.
-
-- `GET /api/GetRecentTelemetry?limit=10` returned both stored telemetry rows
-- `GET /api/GetRecentTelemetry?limit=1` returned only the most recently stored reading
-- `GET /api/GetRecentTelemetry?limit=0` returned HTTP `400 Bad Request`
-
-This established the read-back foundation needed for the dashboard path.
-
-### Local dashboard recent readings and freshness confirmed
-
-![Local dashboard showing recent readings and freshness status](docs/images/dashboard-recent-readings-freshness.jpg)
-
-The local ASP.NET Core Razor Pages dashboard has now been validated against the hosted `GetRecentTelemetry` endpoint.
-
-- The dashboard called the hosted retrieval endpoint with `limit=10`
-- The hosted endpoint returned HTTP `200`
-- The dashboard displayed two persisted readings: `19.05 °C` and `18.42 °C`
-- The latest reading remained visible in the summary card
-- The dashboard displayed a recent readings table
-- The dashboard displayed `Stale` freshness status, which was expected because the latest stored reading was from 19 May
-
-This confirms local dashboard consumption of the hosted retrieval path.
-
-### Local dashboard brood-area alert status confirmed
-
-![Local dashboard showing brood-area alert status](docs/images/dashboard-brood-alert-status.jpg)
-
-The local ASP.NET Core Razor Pages dashboard now applies evidence-informed brood-area temperature thresholds to the latest persisted temperature reading.
-
-- The dashboard displayed a new brood-area alert status section
-- The latest persisted bench reading of `19.05 °C` was classified as `Critical cold deviation`
-- The dashboard displayed the threshold band `< 33.0 °C`
-- The dashboard showed evidence confidence as `Moderate-High`
-- The sustained alert check showed `Not enough data`, because only two recent temperature readings were available
-- The wording clearly frames the alert as a monitoring risk/status signal, not a diagnosis of brood damage
-
-This confirms local dashboard alert-state classification while preserving the boundary that the current stored values are bench validation readings, not genuine brood-area readings.
-
----
-
-## Repository layout
-
-```text
-hivewatch-cloud-iot/
-├── cloud/
-│   ├── HiveWatch.TelemetryIngestor.slnx
-│   └── HiveWatch.TelemetryIngestor/
-│       ├── Function1.cs
-│       ├── Program.cs
-│       ├── host.json
-│       ├── HiveWatch.TelemetryIngestor.csproj
-│       ├── Models/
-│       │   ├── TelemetryReading.cs
-│       │   ├── TelemetryReadingRecord.cs
-│       │   └── TelemetryTableEntity.cs
-│       ├── Services/
-│       │   └── TelemetryStorageService.cs
-│       └── Properties/
-│           └── launchSettings.json
-│
-├── dashboard/
-│   ├── HiveWatch.Dashboard.slnx
-│   └── HiveWatch.Dashboard/
-│       ├── Program.cs
-│       ├── HiveWatch.Dashboard.csproj
-│       ├── Models/
-│       │   ├── LatestTelemetryResult.cs
-│       │   ├── TelemetryApiResponse.cs
-│       │   └── TelemetryReadingRecord.cs
-│       ├── Services/
-│       │   └── TelemetryApiClient.cs
-│       ├── Pages/
-│       │   ├── Index.cshtml
-│       │   ├── Index.cshtml.cs
-│       │   └── Shared/
-│       └── wwwroot/
-│
-├── docs/
-│   └── images/
-│       ├── azure-table-persistence.jpg
-│       ├── azure-function-post-success.jpg
-│       ├── dashboard-brood-alert-status.jpg
-│       ├── dashboard-recent-readings-freshness.jpg
-│       └── esp32-ds18b20-bench-setup.jpg
-│
-├── firmware/
-│   └── proofs/
-│       ├── 01_one_wire_scanner_test/
-│       ├── 02_live_temperature_readings/
-│       ├── 03_wifi_connection_only_test/
-│       ├── 04_remote_webhook_telemetry_smoke_test/
-│       ├── 05_local_azure_function_post_test/
-│       └── 06_hosted_azure_function_post_test/
-│
-├── .gitignore
-└── README.md
-```
+| Version control | Git, GitHub branches, pull requests and evidence commits |
 
 ---
 
 ## Firmware validation sequence
 
-The firmware proofs are retained in the order they were used to de-risk the system.
+The firmware proofs are retained in the order used to reduce implementation risk.
 
 | Stage | Purpose |
 |---|---|
@@ -243,15 +191,15 @@ The firmware proofs are retained in the order they were used to de-risk the syst
 | `03_wifi_connection_only_test` | Prove ESP32 Wi-Fi connectivity independently of the sensor |
 | `04_remote_webhook_telemetry_smoke_test` | POST live temperature telemetry to a temporary Webhook.site endpoint |
 | `05_local_azure_function_post_test` | Test the device-side POST shape against a laptop-local Azure Function route during integration work |
-| `06_hosted_azure_function_post_test` | Successfully POST live temperature telemetry to the hosted Azure Function endpoint |
+| `06_hosted_azure_function_post_test` | POST live temperature telemetry to the hosted Azure Function endpoint |
 
 This staged approach keeps the project traceable and makes the progression from device validation to cloud ingestion explicit.
 
 ---
 
-## Azure Function ingestion, persistence, and retrieval endpoints
+## Azure Function endpoints
 
-The current cloud component is a .NET 8 isolated Azure Function project containing two HTTP-triggered endpoints:
+The cloud component is a .NET 8 isolated Azure Function project containing two HTTP triggered endpoints.
 
 ```text
 IngestTelemetry
@@ -262,37 +210,39 @@ GetRecentTelemetry
 
 The ingestion endpoint currently:
 
-- Accepts HTTP `POST` requests
-- Deserialises the incoming telemetry JSON
-- Validates required fields
-- Persists accepted telemetry to Azure Table Storage
-- Returns a structured `accepted` response only after persistence succeeds
-- Returns a server-side error response if valid telemetry cannot be stored
+| Behaviour | Status |
+|---|---|
+| Accepts HTTP POST requests | Implemented |
+| Deserialises incoming telemetry JSON | Implemented |
+| Validates required fields | Implemented |
+| Persists accepted telemetry to Azure Table Storage | Implemented |
+| Returns a structured accepted response only after persistence succeeds | Implemented |
+| Returns a server-side error response if valid telemetry cannot be stored | Implemented |
 
-#### Example telemetry payload
+Example telemetry payload shape:
 
 ```json
 {
-  "device_id": "hivewatch-esp32-board2",
+  "device_id": "hivewatch-esp32-device",
   "sensor_id": "ds18b20-1",
   "type": "temperature",
   "unit": "C",
-  "value": 18.06
+  "value": 19.50
 }
 ```
 
-#### Example accepted response shape
+Example accepted response shape:
 
 ```json
 {
   "status": "accepted",
-  "received_at_utc": "<server timestamp>",
+  "received_at_utc": "2026-05-23T11:05:06.7133161+00:00",
   "telemetry": {
-    "device_id": "hivewatch-esp32-board2",
+    "device_id": "hivewatch-esp32-device",
     "sensor_id": "ds18b20-1",
     "type": "temperature",
     "unit": "C",
-    "value": 18.06
+    "value": 19.50
   }
 }
 ```
@@ -301,42 +251,36 @@ The ingestion endpoint currently:
 
 The retrieval endpoint currently:
 
-- Accepts HTTP `GET` requests
-- Reads stored telemetry from Azure Table Storage
-- Orders readings by `ReceivedAtUtc` from newest to oldest
-- Returns a default of 20 readings if no `limit` is supplied
-- Accepts a positive whole-number `limit` query parameter
-- Enforces an internal maximum of 100 readings
-- Rejects invalid `limit` values with HTTP `400 Bad Request`
+| Behaviour | Status |
+|---|---|
+| Accepts HTTP GET requests | Implemented |
+| Reads stored telemetry from Azure Table Storage | Implemented |
+| Orders readings by `ReceivedAtUtc` from newest to oldest | Implemented |
+| Returns a default of 20 readings if no `limit` is supplied | Implemented |
+| Accepts a positive whole number `limit` query parameter | Implemented |
+| Enforces an internal maximum of 100 readings | Implemented |
+| Rejects invalid `limit` values with HTTP 400 Bad Request | Implemented |
 
-#### Example retrieval route
+Example retrieval route:
 
 ```text
 GET /api/GetRecentTelemetry?limit=10
 ```
 
-#### Example retrieval response shape
+Example retrieval response shape:
 
 ```json
 {
   "status": "ok",
-  "count": 2,
+  "count": 3,
   "readings": [
     {
-      "deviceId": "hivewatch-esp32-board2",
+      "deviceId": "hivewatch-esp32-device",
       "sensorId": "ds18b20-1",
       "type": "temperature",
       "unit": "C",
-      "value": 19.05,
-      "receivedAtUtc": "2026-05-19T13:23:39.7973131+00:00"
-    },
-    {
-      "deviceId": "hivewatch-esp32-board2",
-      "sensorId": "ds18b20-1",
-      "type": "temperature",
-      "unit": "C",
-      "value": 18.42,
-      "receivedAtUtc": "2026-05-19T11:33:29.5058927+00:00"
+      "value": 19.50,
+      "receivedAtUtc": "2026-05-23T11:05:06.7133161+00:00"
     }
   ]
 }
@@ -344,67 +288,76 @@ GET /api/GetRecentTelemetry?limit=10
 
 ---
 
+## Repository layout
+
+```text
+hivewatch-cloud-iot/
+├── cloud/
+│   ├── HiveWatch.TelemetryIngestor.slnx
+│   └── HiveWatch.TelemetryIngestor/
+├── dashboard/
+│   ├── HiveWatch.Dashboard.slnx
+│   └── HiveWatch.Dashboard/
+├── docs/
+│   ├── evidence/
+│   │   └── 2026-05-23-fresh-full-chain-validation/
+│   └── images/
+├── firmware/
+│   └── proofs/
+├── .gitignore
+└── README.md
+```
+
+---
+
 ## Configuration and security notes
 
-This repository is prepared for public sharing and intentionally excludes local or secret-bearing configuration.
+This repository is prepared for public sharing and intentionally excludes local or secret bearing configuration.
 
-### Placeholder values are used for:
+Placeholder values are used for:
 
-- Wi-Fi network credentials
-- Temporary Webhook.site URLs
-- Hosted Azure Function endpoint URLs
-
-### Runtime settings used for telemetry persistence and retrieval
+| Placeholder type | Reason |
+|---|---|
+| Wi-Fi network credentials | Prevents private network details being committed |
+| Temporary Webhook.site URLs | Prevents obsolete external test URLs being treated as production endpoints |
+| Hosted Azure Function endpoint URLs | Avoids exposing live endpoint details in public source files |
 
 The Azure Function expects runtime configuration for:
 
-- `TelemetryStorageConnectionString` — required Azure Storage connection string
-- `TelemetryTableName` — optional table name override; the code defaults to `TelemetryReadings`
+| Setting | Purpose |
+|---|---|
+| `TelemetryStorageConnectionString` | Required Azure Storage connection string |
+| `TelemetryTableName` | Optional table name override. The code defaults to `TelemetryReadings` |
 
 These values are configured locally through ignored settings files or in hosted Azure Function App environment settings. They are not committed to the repository.
 
-### Excluded from version control:
-
-- `local.settings.json`
-- Visual Studio user files
-- Build outputs such as `bin/` and `obj/`
-- Publish profiles and local deployment metadata
-
-Some proof-of-concept firmware sketches use:
+Some proof of concept firmware sketches use:
 
 ```cpp
 secureClient.setInsecure();
 ```
 
-This kept the early HTTPS smoke tests simple. A hardened version would use proper certificate validation.
+This kept early HTTPS smoke tests simple. A hardened production version would use proper certificate validation.
 
 ---
 
 ## Next planned milestone
 
-The next development step is:
+The next development step is to build on the validated baseline by adding:
 
-> **Build on the local dashboard foundation by adding basic analytics, deployment, and sustained-run validation.**
+| Priority | Next work |
+|---|---|
+| 1 | Basic analytics such as latest, minimum, maximum, average and simple trend |
+| 2 | Azure dashboard deployment through the planned App Service route or documented fallback |
+| 3 | CI/CD refinement for build and test confidence |
+| 4 | Sustained bench telemetry validation |
 
-This will extend the current system from:
-
-> **stored telemetry surfaced through a local dashboard with latest reading, recent readings, freshness status, and brood-area alert status**
-
-to:
-
-> **a more complete monitoring dashboard with summary analytics, Azure deployment, and sustained validation evidence**
-
-The next technical priorities are:
-
-1. Basic analytics such as latest, minimum, maximum, average, and simple trend
-2. Azure dashboard deployment through the planned App Service route or documented fallback
-3. Sustained bench telemetry validation
-4. Optional alert-state refinement once fresh telemetry cadence evidence is available
+The project now has a validated technical baseline. The next phase is controlled completion, not proving the chain works once.
 
 ---
 
 ## Project direction
 
-HiveWatch Cloud IoT now has an established technical baseline: a real DS18B20 temperature probe, an ESP32 device capable of Wi-Fi telemetry transmission, a hosted Azure Function ingestion endpoint demonstrated end to end, Azure Table Storage persistence for accepted telemetry, a hosted retrieval endpoint that reads back stored telemetry, and a local Razor Pages dashboard that displays latest and recent readings, freshness status, and brood-area alert status.
+HiveWatch Cloud IoT now has a working baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval and local dashboard display. The project will now mature toward analytics, Azure dashboard deployment, CI/CD refinement and sustained telemetry validation.
 
-The next milestone is to mature the dashboard from local monitoring foundation toward basic analytics, Azure deployment, sustained validation, and later alert-state refinement, while keeping heavier items such as IoT Hub, Cosmos DB, Terraform, external notifications, and extra sensors as stretch goals only.
+Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain stretch goals only until the core monitoring system is submission safe.
