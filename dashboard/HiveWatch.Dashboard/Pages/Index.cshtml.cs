@@ -11,13 +11,16 @@ public class IndexModel : PageModel
 
     private readonly TelemetryApiClient _telemetryApiClient;
     private readonly BroodTemperatureAlertEvaluator _alertEvaluator;
+    private readonly TelemetryAnalyticsCalculator _analyticsCalculator;
 
     public IndexModel(
         TelemetryApiClient telemetryApiClient,
-        BroodTemperatureAlertEvaluator alertEvaluator)
+        BroodTemperatureAlertEvaluator alertEvaluator,
+        TelemetryAnalyticsCalculator analyticsCalculator)
     {
         _telemetryApiClient = telemetryApiClient;
         _alertEvaluator = alertEvaluator;
+        _analyticsCalculator = analyticsCalculator;
     }
 
     public TelemetryReadingRecord? LatestReading { get; private set; }
@@ -27,6 +30,9 @@ public class IndexModel : PageModel
 
     public BroodTemperatureAlertResult TemperatureAlert { get; private set; } =
         BroodTemperatureAlertResult.NoTelemetry();
+
+    public TelemetryAnalyticsSummary AnalyticsSummary { get; private set; } =
+        TelemetryAnalyticsSummary.NoTelemetry();
 
     public string StatusMessage { get; private set; } = "Telemetry has not been checked yet.";
 
@@ -52,6 +58,7 @@ public class IndexModel : PageModel
 
         UpdateFreshnessStatus();
         TemperatureAlert = _alertEvaluator.Evaluate(LatestReading, RecentReadings);
+        AnalyticsSummary = _analyticsCalculator.Calculate(RecentReadings);
     }
 
     private void UpdateFreshnessStatus()

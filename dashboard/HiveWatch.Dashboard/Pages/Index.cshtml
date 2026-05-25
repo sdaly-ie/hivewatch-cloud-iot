@@ -84,6 +84,91 @@ else
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
+                    <h2 class="h4 mb-1">Baseline analytics</h2>
+                    <p class="text-muted mb-0">
+                        Simple summary statistics calculated from the latest retrieved temperature readings.
+                        These support monitoring and inspection prioritisation, not biological diagnosis.
+                    </p>
+                </div>
+                <span class="badge bg-secondary text-white">
+                    @Model.AnalyticsSummary.ReadingCount reading(s)
+                </span>
+            </div>
+
+            @if (Model.AnalyticsSummary.HasReadings)
+            {
+                <div class="row g-3 mb-3">
+                    <div class="col-6 col-md-2">
+                        <div class="border rounded p-3 h-100">
+                            <h3 class="h6 text-muted">Latest</h3>
+                            <p class="h4 mb-0">
+                                @((Model.AnalyticsSummary.LatestValue ?? 0).ToString("0.00")) &deg;@Model.AnalyticsSummary.Unit
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <div class="border rounded p-3 h-100">
+                            <h3 class="h6 text-muted">Minimum</h3>
+                            <p class="h4 mb-0">
+                                @((Model.AnalyticsSummary.MinimumValue ?? 0).ToString("0.00")) &deg;@Model.AnalyticsSummary.Unit
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <div class="border rounded p-3 h-100">
+                            <h3 class="h6 text-muted">Maximum</h3>
+                            <p class="h4 mb-0">
+                                @((Model.AnalyticsSummary.MaximumValue ?? 0).ToString("0.00")) &deg;@Model.AnalyticsSummary.Unit
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <div class="border rounded p-3 h-100">
+                            <h3 class="h6 text-muted">Average</h3>
+                            <p class="h4 mb-0">
+                                @((Model.AnalyticsSummary.AverageValue ?? 0).ToString("0.00")) &deg;@Model.AnalyticsSummary.Unit
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <div class="border rounded p-3 h-100">
+                            <h3 class="h6 text-muted">Median</h3>
+                            <p class="h4 mb-0">
+                                @((Model.AnalyticsSummary.MedianValue ?? 0).ToString("0.00")) &deg;@Model.AnalyticsSummary.Unit
+                            </p>
+                            <p class="small text-muted mb-0">Mid-point value</p>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <div class="border rounded p-3 h-100">
+                            <h3 class="h6 text-muted">Trend</h3>
+                            <div class="fs-4 fw-bold rounded px-3 py-2 text-center @Model.AnalyticsSummary.TrendBadgeClass">@Model.AnalyticsSummary.TrendStatus</div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="small text-muted mb-0">
+                    @Model.AnalyticsSummary.TrendMessage
+                </p>
+            }
+            else
+            {
+                <div class="alert alert-secondary mb-0" role="alert">
+                    No temperature readings are available for analytics.
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
                     <h2 class="h4 mb-1">Brood-area alert status</h2>
                     <p class="text-muted mb-0">
                         Applies evidence-informed brood-area thresholds to the latest persisted temperature reading.
@@ -142,7 +227,7 @@ else
                         Showing up to 10 latest persisted telemetry records.
                     </p>
                 </div>
-                <span class="badge text-bg-secondary">
+                <span class="badge bg-secondary text-white">
                     @Model.RecentReadings.Count reading(s)
                 </span>
             </div>
@@ -186,3 +271,5 @@ else
         </div>
     </div>
 }
+
+
