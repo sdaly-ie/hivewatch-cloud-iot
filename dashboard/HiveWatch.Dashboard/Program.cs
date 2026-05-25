@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddHttpClient<TelemetryApiClient>();
 builder.Services.AddSingleton<BroodTemperatureAlertEvaluator>();
+builder.Services.AddSingleton<TelemetryAnalyticsCalculator>();
 
 var app = builder.Build();
 
