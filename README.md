@@ -19,10 +19,12 @@ Instead, it gives beekeepers early warning signals so they can decide which hive
 | Cloud backend | C#/.NET 8 isolated Azure Functions |
 | Storage layer | Azure Table Storage using the `TelemetryReadings` table |
 | Retrieval path | Hosted `GetRecentTelemetry` endpoint |
-| Dashboard | Local ASP.NET Core Razor Pages dashboard |
-| Current dashboard behaviour | Latest reading, recent readings, fresh or stale state, temperature alert band and baseline analytics |
-| Current validation status | Full bench chain and baseline analytics validated locally |
-| Key boundary | Bench-validated prototype, not a production hive monitoring system or biological diagnosis tool |
+| Dashboard | ASP.NET Core Razor Pages dashboard, validated locally, in Docker and as an Azure-hosted prototype |
+| Deployment route | Docker image pushed to Azure Container Registry and hosted through Azure App Service for Containers |
+| Current dashboard behaviour | Latest reading, recent readings, fresh or stale state, temperature alert band, sustained-alert data sufficiency and baseline analytics |
+| Current validation status | Full bench chain, baseline analytics, local containerisation and Azure-hosted dashboard smoke validation achieved |
+| Cost-control position | Dashboard App Service Plan scaled down from B1 Basic to F1 Free after validation for cost control. Basic Azure Container Registry is retained temporarily to reduce rework for later demonstrations and validation checks. |
+| Key boundary | Bench-validated and Azure-hosted prototype, not a production hive monitoring system or biological diagnosis tool |
 
 ---
 
@@ -38,13 +40,18 @@ The current implementation validates a real physical temperature reading travell
 | 4 | Hosted C#/.NET Azure Function | Accepts and validates incoming telemetry |
 | 5 | Azure Table Storage | Persists accepted readings in `TelemetryReadings` |
 | 6 | Hosted `GetRecentTelemetry` endpoint | Retrieves recent stored telemetry |
-| 7 | Local ASP.NET Core Razor Pages dashboard | Displays latest reading, recent readings, fresh or stale state, alert band and baseline analytics |
+| 7 | ASP.NET Core Razor Pages dashboard | Displays latest reading, recent readings, fresh or stale state, alert band and baseline analytics |
+| 8 | Docker container image | Packages the dashboard for repeatable container deployment |
+| 9 | Azure Container Registry | Stores the dashboard image used by Azure App Service |
+| 10 | Azure App Service for Containers | Hosts the dashboard as an Azure web application |
 
-A live DS18B20 bench reading of `19.50 °C` has been captured by the ESP32 device, posted over Wi-Fi and HTTPS to the hosted Azure Function, accepted with HTTP `200`, persisted in Azure Table Storage, retrieved through `GetRecentTelemetry`, and displayed in the local Razor Pages dashboard as the latest reading with Fresh status and brood temperature alert classification.
+A live DS18B20 bench reading of `19.50 °C` has been captured by the ESP32 device, posted over Wi-Fi and HTTPS to the hosted Azure Function, accepted with HTTP `200`, persisted in Azure Table Storage, retrieved through `GetRecentTelemetry`, and displayed in the Razor Pages dashboard as the latest reading with Fresh status and brood temperature alert classification.
 
-This result validates the current system path under controlled bench conditions. It does not represent in-hive field validation, production alerting, or a completed sustained telemetry run.
+The dashboard has also been extended with baseline analytics. It summarises retrieved temperature telemetry using latest, minimum, maximum, average, median, reading count and a simple trend status.
 
-The local dashboard has also been extended with baseline analytics. It now summarises retrieved temperature telemetry using latest, minimum, maximum, average, median, reading count and a simple trend status.
+On 02 June 2026, the containerised dashboard was deployed to Azure App Service for Containers and validated as an Azure-hosted prototype. The hosted dashboard returned HTTP `200 OK` over HTTPS and rendered latest temperature, recent readings, freshness, baseline analytics and brood-area alert status from the `GetRecentTelemetry` path.
+
+Prototype boundary: this validates Azure-hosted dashboard deployment and smoke-test rendering only. It does not claim production hardening, live in-hive validation, sustained telemetry validation or biological diagnosis.
 
 ---
 
@@ -59,8 +66,11 @@ flowchart LR
     C --> D["Hosted C#/.NET Azure Function"]
     D --> E["Azure Table Storage"]
     E --> F["GetRecentTelemetry endpoint"]
-    F --> G["Local ASP.NET Core Razor Pages dashboard"]
-    G --> H["Latest reading, recent readings, fresh or stale status, alert band, and baseline analytics"]
+    F --> G["ASP.NET Core Razor Pages dashboard"]
+    G --> H["Docker container image"]
+    H --> I["Azure Container Registry"]
+    I --> J["Azure App Service for Containers"]
+    J --> K["Hosted dashboard: latest reading, recent readings, fresh or stale status, alert band and baseline analytics"]
 ```
 
 ### Architecture notes
@@ -73,12 +83,15 @@ flowchart LR
 | Azure Table Storage | Provides durable storage for accepted telemetry records |
 | `GetRecentTelemetry` | Reads back recent stored telemetry for dashboard use |
 | Razor Pages dashboard | Displays latest reading, recent readings, fresh or stale state, alert band and baseline analytics |
+| Docker container image | Packages the dashboard with a multi-stage .NET 8 build for container deployment |
+| Azure Container Registry | Stores the versioned dashboard image for App Service pull |
+| Azure App Service for Containers | Hosts the dashboard as a deployed Azure web application |
 
 ---
 
 ## Dashboard behaviour
 
-The local dashboard currently displays:
+The dashboard displays:
 
 | Dashboard element | Purpose |
 |---|---|
@@ -89,7 +102,13 @@ The local dashboard currently displays:
 | Sustained alert data sufficiency | Separates an immediate out-of-range reading from a sustained alert state requiring enough recent readings |
 | Baseline analytics | Summarises retrieved temperature readings using latest, minimum, maximum, average, median, reading count and simple trend status |
 
-The dashboard is currently local and read only. Azure dashboard deployment remains a planned milestone.
+The dashboard is read-only and has been validated in three forms:
+
+| Dashboard form | Current status |
+|---|---|
+| Local Razor Pages dashboard | Validated |
+| Local Docker container | Validated |
+| Azure App Service for Containers | Validated at prototype smoke-test level |
 
 ---
 
@@ -121,19 +140,50 @@ This boundary matters because a bench temperature reading can validate system be
 | ESP32 to hosted Azure Function telemetry POST | Validated |
 | Accepted telemetry to Azure Table Storage persistence | Validated |
 | Latest and recent stored telemetry retrieval endpoint | Validated |
-| Local dashboard latest reading view | Validated locally |
-| Local dashboard recent readings table | Validated locally |
-| Local dashboard fresh or stale state | Validated locally |
-| Local dashboard brood temperature alert status | Validated locally |
+| Local dashboard latest reading view | Validated |
+| Local dashboard recent readings table | Validated |
+| Local dashboard fresh or stale state | Validated |
+| Local dashboard brood temperature alert status | Validated |
 | Fresh full chain bench validation | Validated |
-| Dashboard baseline analytics | Validated locally |
-| Azure dashboard deployment | Future milestone |
+| Dashboard baseline analytics | Validated |
+| Expansion-board DS18B20 revalidation | Validated |
+| Local dashboard containerisation | Validated |
+| Azure dashboard deployment | Validated at prototype level and cost-controlled on F1 Free |
 | CI/CD refinement | Future milestone |
+| Regression and failure-mode evidence | Future milestone |
 | Sustained telemetry validation | Future milestone |
 
 ---
 
 ## Validation evidence
+
+### Azure dashboard deployment validation
+
+The Azure dashboard deployment evidence is stored in:
+
+```text
+docs/evidence/2026-06-02-azure-dashboard-deployment/
+```
+
+| Evidence artefact | What it demonstrates |
+|---|---|
+| [`2026-06-02-hivewatch-dashboard-azure-app-service-validation.jpg`](docs/evidence/2026-06-02-azure-dashboard-deployment/2026-06-02-hivewatch-dashboard-azure-app-service-validation.jpg) | Hosted Azure dashboard rendered over HTTPS with latest temperature, freshness, baseline analytics, brood-area alert status and recent readings |
+| [`2026-06-02-azure-hosted-dashboard-terminal-validation-redacted.jpg`](docs/evidence/2026-06-02-azure-dashboard-deployment/2026-06-02-azure-hosted-dashboard-terminal-validation-redacted.jpg) | Redacted terminal evidence showing Azure Web App status, container configuration, app setting names and HTTP `200 OK` response |
+| [`azure-dashboard-deployment-evidence-note.txt`](docs/evidence/2026-06-02-azure-dashboard-deployment/azure-dashboard-deployment-evidence-note.txt) | Text evidence note summarising hosted deployment, HTTP `200 OK`, Kestrel response, App Service container state, ACR managed identity pull and dashboard panel rendering |
+
+![Azure-hosted dashboard validation](docs/evidence/2026-06-02-azure-dashboard-deployment/2026-06-02-hivewatch-dashboard-azure-app-service-validation.jpg)
+
+### Expansion-board DS18B20 revalidation
+
+The expansion-board revalidation evidence is stored in:
+
+```text
+docs/evidence/2026-05-29-expansion-board-ds18b20-revalidation/
+```
+
+| Evidence artefact | What it demonstrates |
+|---|---|
+| Expansion-board evidence images | ESP32 Board 2 remained able to detect the DS18B20, capture a `21.25 °C` reading, POST to the hosted Azure Function, persist to Azure Table Storage and render through the dashboard after the hardware layout change |
 
 ### Baseline analytics validation
 
@@ -147,7 +197,6 @@ docs/evidence/2026-05-25-baseline-analytics/
 |---|---|
 | [`dashboard-baseline-analytics.jpg`](docs/evidence/2026-05-25-baseline-analytics/dashboard-baseline-analytics.jpg) | Local dashboard baseline analytics panel showing latest, minimum, maximum, average, median, trend, recent readings and alert context |
 
-![Dashboard baseline analytics](docs/evidence/2026-05-25-baseline-analytics/dashboard-baseline-analytics.jpg)
 
 ### Fresh full chain validation
 
@@ -159,9 +208,9 @@ docs/evidence/2026-05-23-fresh-full-chain-validation/
 
 | Evidence artefact | What it demonstrates |
 |---|---|
-| [`serial-monitor-success.jpg`](docs/evidence/2026-05-23-fresh-full-chain-validation/serial-monitor-success.jpg) | ESP32 Wi-Fi connection, DS18B20 reading, JSON payload, hosted Azure Function POST, HTTP 200 response, and accepted telemetry |
+| [`serial-monitor-success.jpg`](docs/evidence/2026-05-23-fresh-full-chain-validation/serial-monitor-success.jpg) | ESP32 Wi-Fi connection, DS18B20 reading, JSON payload, hosted Azure Function POST, HTTP `200` response and accepted telemetry |
 | [`azure-table-storage-row.jpg`](docs/evidence/2026-05-23-fresh-full-chain-validation/azure-table-storage-row.jpg) | New `19.5 °C` telemetry row persisted in Azure Table Storage |
-| [`dashboard-fresh-alert-status.jpg`](docs/evidence/2026-05-23-fresh-full-chain-validation/dashboard-fresh-alert-status.jpg) | Dashboard retrieved the fresh row, displayed Fresh status, showed recent readings, and classified the alert band |
+| [`dashboard-fresh-alert-status.jpg`](docs/evidence/2026-05-23-fresh-full-chain-validation/dashboard-fresh-alert-status.jpg) | Dashboard retrieved the fresh row, displayed Fresh status, showed recent readings and classified the alert band |
 
 ### Earlier staged validation evidence
 
@@ -186,7 +235,9 @@ docs/evidence/2026-05-23-fresh-full-chain-validation/
 | Storage integration | Azure.Data.Tables client library, `TelemetryReadings` table |
 | Retrieval path | HTTP GET Function endpoint, latest and recent stored telemetry JSON read back |
 | Dashboard | ASP.NET Core Razor Pages, typed `HttpClient`, Bootstrap-based Razor Pages UI |
-| Validation and integration testing | Arduino Serial Monitor, Webhook.site remote POST smoke test, PowerShell REST checks, Azure Table Storage inspection, local dashboard browser checks |
+| Containerisation | Docker Desktop, multi-stage .NET 8 Dockerfile, root `.dockerignore`, local dashboard image build |
+| Azure dashboard hosting | Azure Container Registry, Azure App Service for Containers, Linux Web App, App Service Plan, managed identity, AcrPull, Azure CLI |
+| Validation and integration testing | Arduino Serial Monitor, Webhook.site remote POST smoke test, PowerShell REST checks, Azure Table Storage inspection, local browser checks, Docker runtime checks, hosted Azure HTTP smoke checks |
 | Version control | Git, GitHub branches, pull requests and evidence commits |
 
 ---
@@ -270,7 +321,7 @@ The retrieval endpoint currently:
 | Returns a default of 20 readings if no `limit` is supplied | Implemented |
 | Accepts a positive whole number `limit` query parameter | Implemented |
 | Enforces an internal maximum of 100 readings | Implemented |
-| Rejects invalid `limit` values with HTTP 400 Bad Request | Implemented |
+| Rejects invalid `limit` values with HTTP `400 Bad Request` | Implemented |
 
 Example retrieval route:
 
@@ -299,6 +350,38 @@ Example retrieval response shape:
 
 ---
 
+## Container and Azure dashboard deployment
+
+The dashboard includes a Dockerfile at:
+
+```text
+dashboard/HiveWatch.Dashboard/Dockerfile
+```
+
+The Dockerfile uses a multi-stage .NET 8 build. The SDK image restores and publishes the dashboard, and the ASP.NET runtime image runs `HiveWatch.Dashboard.dll` on port `8080`.
+
+Example local image build:
+
+```powershell
+docker build -f dashboard/HiveWatch.Dashboard/Dockerfile -t hivewatch-dashboard:local .
+```
+
+Example local container run shape, with the telemetry endpoint supplied at runtime rather than committed:
+
+```powershell
+docker run -d `
+  --name hivewatch-dashboard-local `
+  -p 8080:8080 `
+  -e TelemetryApi__RecentTelemetryUrl="<configured endpoint>" `
+  hivewatch-dashboard:local
+```
+
+For Azure deployment, the dashboard image was tagged and pushed to Azure Container Registry, then hosted through Azure App Service for Containers. The Web App pulls from the registry using a system-assigned managed identity with `AcrPull`, rather than enabling ACR admin credentials.
+
+After hosted validation, the App Service Plan was scaled from B1 Basic to F1 Free to protect Azure student credit while preserving the deployed configuration for light follow-up checks.
+
+---
+
 ## Repository layout
 
 ```text
@@ -309,13 +392,17 @@ hivewatch-cloud-iot/
 ├── dashboard/
 │   ├── HiveWatch.Dashboard.slnx
 │   └── HiveWatch.Dashboard/
+│       └── Dockerfile
 ├── docs/
 │   ├── evidence/
 │   │   ├── 2026-05-23-fresh-full-chain-validation/
-│   │   └── 2026-05-25-baseline-analytics/
+│   │   ├── 2026-05-25-baseline-analytics/
+│   │   ├── 2026-05-29-expansion-board-ds18b20-revalidation/
+│   │   └── 2026-06-02-azure-dashboard-deployment/
 │   └── images/
 ├── firmware/
 │   └── proofs/
+├── .dockerignore
 ├── .gitignore
 └── README.md
 ```
@@ -333,6 +420,8 @@ Placeholder values are used for:
 | Wi-Fi network credentials | Prevents private network details being committed |
 | Temporary Webhook.site URLs | Prevents obsolete external test URLs being treated as production endpoints |
 | Hosted Azure Function endpoint URLs | Avoids exposing live endpoint details in public source files |
+| Storage connection strings | Prevents access to private Azure resources |
+| Dashboard telemetry retrieval URL | Kept as runtime configuration, not committed source |
 
 The Azure Function expects runtime configuration for:
 
@@ -341,7 +430,15 @@ The Azure Function expects runtime configuration for:
 | `TelemetryStorageConnectionString` | Required Azure Storage connection string |
 | `TelemetryTableName` | Optional table name override. The code defaults to `TelemetryReadings` |
 
-These values are configured locally through ignored settings files or in hosted Azure Function App environment settings. They are not committed to the repository.
+The dashboard expects runtime configuration for:
+
+| Setting | Purpose |
+|---|---|
+| `TelemetryApi:RecentTelemetryUrl` | Local .NET configuration key for the hosted retrieval endpoint |
+| `TelemetryApi__RecentTelemetryUrl` | Environment-variable/App Service form of the same setting |
+| `WEBSITES_PORT` | Azure App Service setting used to route traffic to the container port, set to `8080` during validation |
+
+These values are configured locally through ignored settings, .NET user secrets or hosted Azure App settings. They are not committed to the repository.
 
 Some proof-of-concept firmware sketches use:
 
@@ -355,21 +452,24 @@ This kept early HTTPS smoke tests simple. A hardened production version would us
 
 ## Next planned milestone
 
-The next development step is to build on the validated baseline by adding:
+The next development step is controlled completion around regression, CI/CD and sustained validation, not proving the core chain again.
 
 | Priority | Next work |
 |---|---|
-| 1 | Azure dashboard deployment through the planned App Service route or documented fallback |
-| 2 | CI/CD refinement for build and test confidence |
-| 3 | Sustained bench telemetry validation |
-| 4 | Optional 24-hour chart or richer analytics once deployment and CI/CD are safe |
+| 1 | Create a formal post-deployment regression checklist covering ingestion, persistence, retrieval, dashboard rendering, freshness, alert status and analytics |
+| 2 | Refine CI/CD only where it improves evidence and does not distract from final delivery |
+| 3 | Complete and document a sustained bench telemetry run with expected versus received readings, storage evidence, dashboard evidence and interruption notes |
+| 4 | Capture bounded failure-mode evidence, such as stale telemetry or invalid retrieval parameters, where proportionate |
+| 5 | Prepare final demonstration and Final Report evidence mapping |
 
-The project now has a validated technical baseline. The next phase is controlled completion, not proving the chain works once.
+The project now has a validated technical baseline, local containerisation and Azure-hosted dashboard smoke evidence. The next phase is evidence closure, regression confidence and final presentation readiness.
 
 ---
 
 ## Project direction
 
-HiveWatch Cloud IoT now has a working baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, local dashboard display and baseline analytics. The project will now mature toward Azure dashboard deployment, CI/CD refinement, sustained telemetry validation and optional richer analytics.
+HiveWatch Cloud IoT now has a working baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, Docker containerisation and Azure App Service hosted dashboard validation.
 
-Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain stretch goals only until the core monitoring system is submission safe.
+The project will now mature toward regression evidence, CI/CD refinement, sustained telemetry validation, final demonstration preparation and Final Report evidence mapping.
+
+Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain stretch goals until the core monitoring system is stable, validated and ready for demonstration.
