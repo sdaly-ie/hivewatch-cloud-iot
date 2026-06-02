@@ -1,0 +1,33 @@
+﻿HiveWatch Cloud Edition IoT
+Azure App Service Dashboard Deployment Evidence
+Date: 2026-06-02
+
+Validation outcome:
+The containerised ASP.NET Core Razor Pages dashboard was deployed to Azure App Service for Containers and successfully loaded over HTTPS.
+
+Hosted dashboard:
+https://hivewatch-dashboard-80228.azurewebsites.net
+
+Evidence files:
+- 2026-06-02-hivewatch-dashboard-azure-app-service-validation.jpg
+- 2026-06-02-azure-hosted-dashboard-terminal-validation-redacted.jpg
+
+Evidence observed:
+- HTTP/1.1 200 OK
+- Server: Kestrel
+- Web App state: Running
+- Kind: app,linux,container
+- Container image: hivewatchacr80228.azurecr.io/hivewatch-dashboard:v1-20260602-0838
+- ACR managed identity pull enabled
+- App settings present:
+  - WEBSITES_PORT
+  - TelemetryApi__RecentTelemetryUrl
+- Dashboard retrieved 5 recent telemetry readings
+- Latest temperature: 21.25 °C
+- Freshness status: Stale
+- Baseline analytics rendered
+- Brood-area alert status rendered
+- Recent readings table rendered
+
+Boundary:
+This validates Azure-hosted dashboard deployment and smoke-test rendering. It does not prove live in-hive deployment, production hardening, sustained telemetry, or biological diagnosis.
