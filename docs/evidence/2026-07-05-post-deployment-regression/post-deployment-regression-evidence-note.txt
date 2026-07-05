@@ -1,0 +1,53 @@
+HiveWatch Cloud Edition IoT
+
+Post-Deployment Regression Evidence
+
+Date: 2026-07-05
+
+Validation outcome:
+The previously validated HiveWatch sensor-to-cloud-to-dashboard baseline was successfully rechecked after the Azure App Service deployment milestone.
+
+Regression results:
+
+- Repository main branch was initially clean and aligned with origin/main at commit b1c0a3f.
+- Azure Function Release build succeeded.
+- ASP.NET Core Razor Pages dashboard build succeeded.
+- ESP32 Board 2 connected to Wi-Fi.
+- One DS18B20 temperature sensor was detected.
+- A fresh 23.12 °C reading was captured and sent to the hosted Azure Function.
+- The hosted ingestion request returned HTTP 200 with status accepted.
+- The 23.12 °C reading was persisted in Azure Table Storage.
+- GetRecentTelemetry returned status ok and six readings.
+- An invalid limit value returned HTTP 400.
+- The local dashboard rendered the latest reading, device metadata, freshness, analytics, brood-area alert status and recent readings.
+- The Docker image built successfully as hivewatch-dashboard:regression.
+- The local Docker container started and returned HTTP 200 from Kestrel.
+- The containerised dashboard rendered successfully on localhost port 8080.
+- The Azure App Service Plan remained on F1 Free.
+- The Azure Web App was Running as a Linux container.
+- Azure Container Registry remained provisioned on the Basic tier.
+- Required App Service setting names were present.
+- Azure Container Registry managed-identity image pull remained enabled.
+- The Azure-hosted dashboard returned HTTP 200.
+- The Azure-hosted dashboard rendered all expected panels.
+- The latest reading later transitioned from Fresh to Stale as expected, supporting validation of the implemented freshness logic.
+
+Evidence files:
+
+- azure-hosted-configuration-regression-2026-07-05.jpg
+- azure-hosted-dashboard-ui-regression-2026-07-05.jpg
+- azure-hosted-http-regression-2026-07-05.jpg
+- azure-hosted-resources-regression-2026-07-05.jpg
+- azure-table-storage-persistence-regression-2026-07-05.jpg
+- build-regression-cloud-dashboard-2026-07-05.jpg
+- dashboard-docker-ui-regression-2026-07-05.jpg
+- dashboard-local-startup-regression-2026-07-05.jpg
+- dashboard-local-ui-regression-2026-07-05.jpg
+- docker-container-runtime-regression-2026-07-05.jpg
+- docker-image-build-regression-2026-07-05.jpg
+- get-recent-telemetry-retrieval-regression-2026-07-05.jpg
+- invalid-limit-retrieval-regression-2026-07-05.jpg
+- serial-monitor-ingestion-regression-2026-07-05.jpg
+
+Boundary:
+This evidence supports prototype-level post-deployment regression confidence and final demonstration readiness. It does not prove production hardening, live in-hive operation, sustained telemetry reliability, service-level availability or biological diagnosis.
