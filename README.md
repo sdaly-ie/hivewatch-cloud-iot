@@ -22,7 +22,7 @@ Instead, it gives beekeepers early warning signals so they can decide which hive
 | Dashboard | ASP.NET Core Razor Pages dashboard, validated locally, in Docker and as an Azure-hosted prototype |
 | Deployment route | Docker image pushed to Azure Container Registry and hosted through Azure App Service for Containers |
 | Current dashboard behaviour | Latest reading, recent readings, fresh or stale state, temperature alert band, sustained-alert data sufficiency and baseline analytics |
-| Current validation status | Full bench chain, baseline analytics, local containerisation and Azure-hosted dashboard smoke validation achieved |
+| Current validation status | Full bench chain, baseline analytics, local containerisation, Azure-hosted dashboard smoke validation and post-deployment regression achieved |
 | Cost-control position | Dashboard App Service Plan scaled down from B1 Basic to F1 Free after validation for cost control. Basic Azure Container Registry is retained temporarily to reduce rework for later demonstrations and validation checks. |
 | Key boundary | Bench-validated and Azure-hosted prototype, not a production hive monitoring system or biological diagnosis tool |
 
@@ -51,7 +51,9 @@ The dashboard has also been extended with baseline analytics. It summarises retr
 
 On 02 June 2026, the containerised dashboard was deployed to Azure App Service for Containers and validated as an Azure-hosted prototype. The hosted dashboard returned HTTP `200 OK` over HTTPS and rendered latest temperature, recent readings, freshness, baseline analytics and brood-area alert status from the `GetRecentTelemetry` path.
 
-Prototype boundary: this validates Azure-hosted dashboard deployment and smoke-test rendering only. It does not claim production hardening, live in-hive validation, sustained telemetry validation or biological diagnosis.
+On 05 July 2026, a structured post-deployment regression run revalidated the cloud and dashboard builds, ESP32 Board 2 and DS18B20 ingestion, Azure Table Storage persistence, `GetRecentTelemetry` retrieval, invalid-limit HTTP `400` handling, local and Docker dashboard rendering, Docker runtime, Azure configuration and hosted HTTP `200` behaviour. The same reading later transitioned from Fresh to Stale as expected, providing additional evidence that the implemented freshness logic behaved correctly.
+
+Prototype boundary: this validates Azure-hosted dashboard deployment, smoke-test rendering and post-deployment regression at prototype level. It does not claim production hardening, live in-hive validation, sustained telemetry validation or biological diagnosis.
 
 ---
 
@@ -149,13 +151,34 @@ This boundary matters because a bench temperature reading can validate system be
 | Expansion-board DS18B20 revalidation | Validated |
 | Local dashboard containerisation | Validated |
 | Azure dashboard deployment | Validated at prototype level and cost-controlled on F1 Free |
-| CI/CD refinement | Future milestone |
-| Regression and failure-mode evidence | Future milestone |
-| Sustained telemetry validation | Future milestone |
+| Post-deployment regression | Validated on 05 July 2026 |
+| Bounded failure-mode evidence | Partially validated through invalid-limit HTTP `400` handling and the Fresh-to-Stale transition |
+| CI/CD refinement | Planned — next implementation step |
+| Sustained telemetry validation | Planned — subsequent validation step |
 
 ---
 
 ## Validation evidence
+
+### Post-deployment regression validation
+
+The post-deployment regression evidence is stored in:
+
+```text
+docs/evidence/2026-07-05-post-deployment-regression/
+```
+
+| Evidence artefact | What it demonstrates |
+|---|---|
+| [`post-deployment-regression-evidence-note.txt`](docs/evidence/2026-07-05-post-deployment-regression/post-deployment-regression-evidence-note.txt) | Concise outcome summary, evidence inventory and prototype boundary |
+| [`build-regression-cloud-dashboard-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/build-regression-cloud-dashboard-2026-07-05.jpg) | Azure Function Release build and Razor Pages dashboard build succeeded |
+| [`serial-monitor-ingestion-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/serial-monitor-ingestion-regression-2026-07-05.jpg) | ESP32 Board 2 detected one DS18B20 sensor and posted a fresh `23.12 °C` reading with HTTP `200` accepted |
+| [`azure-table-storage-persistence-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/azure-table-storage-persistence-regression-2026-07-05.jpg) | The fresh reading was persisted in Azure Table Storage |
+| [`get-recent-telemetry-retrieval-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/get-recent-telemetry-retrieval-regression-2026-07-05.jpg) | `GetRecentTelemetry` returned status `ok` and six readings |
+| [`invalid-limit-retrieval-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/invalid-limit-retrieval-regression-2026-07-05.jpg) | Invalid retrieval input returned HTTP `400` |
+| [`dashboard-local-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/dashboard-local-ui-regression-2026-07-05.jpg) | Local dashboard rendered the expected telemetry, freshness, alert and analytics panels |
+| [`dashboard-docker-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/dashboard-docker-ui-regression-2026-07-05.jpg) | The containerised dashboard rendered successfully on localhost |
+| [`azure-hosted-dashboard-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/azure-hosted-dashboard-ui-regression-2026-07-05.jpg) | The Azure-hosted dashboard rendered successfully and later displayed the expected Stale state |
 
 ### Azure dashboard deployment validation
 
@@ -398,7 +421,8 @@ hivewatch-cloud-iot/
 │   │   ├── 2026-05-23-fresh-full-chain-validation/
 │   │   ├── 2026-05-25-baseline-analytics/
 │   │   ├── 2026-05-29-expansion-board-ds18b20-revalidation/
-│   │   └── 2026-06-02-azure-dashboard-deployment/
+│   │   ├── 2026-06-02-azure-dashboard-deployment/
+│   │   └── 2026-07-05-post-deployment-regression/
 │   └── images/
 ├── firmware/
 │   └── proofs/
@@ -450,19 +474,19 @@ This kept early HTTPS smoke tests simple. A hardened production version would us
 
 ---
 
-## Next planned milestone
+## Remaining baseline work
 
-The next development step is controlled completion around regression, CI/CD and sustained validation, not proving the core chain again.
+Post-deployment regression was completed on 05 July 2026. The next development step is controlled baseline closure rather than proving the core chain again.
 
 | Priority | Next work |
 |---|---|
-| 1 | Create a formal post-deployment regression checklist covering ingestion, persistence, retrieval, dashboard rendering, freshness, alert status and analytics |
-| 2 | Refine CI/CD only where it improves evidence and does not distract from final delivery |
-| 3 | Complete and document a sustained bench telemetry run with expected versus received readings, storage evidence, dashboard evidence and interruption notes |
-| 4 | Capture bounded failure-mode evidence, such as stale telemetry or invalid retrieval parameters, where proportionate |
-| 5 | Prepare final demonstration and Final Report evidence mapping |
+| 1 | Add a minimal GitHub Actions workflow that builds the Azure Function and dashboard |
+| 2 | Add targeted automated tests for stable, high-value application logic |
+| 3 | Complete any remaining bounded failure-mode evidence |
+| 4 | Prepare, execute and analyse a sustained bench telemetry run with expected versus received readings, storage evidence, dashboard evidence and interruption notes |
+| 5 | Close the baseline, update project-control records and prepare the Final Report, presentation and demonstration |
 
-The project now has a validated technical baseline, local containerisation and Azure-hosted dashboard smoke evidence. The next phase is evidence closure, regression confidence and final presentation readiness.
+The project now has a validated technical baseline, local and Docker runtime evidence, Azure-hosted deployment evidence and a completed post-deployment regression run. The next phase is CI refinement, sustained validation, baseline closure and assessed-submission preparation.
 
 ---
 
@@ -470,6 +494,6 @@ The project now has a validated technical baseline, local containerisation and A
 
 HiveWatch Cloud IoT now has a working baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, Docker containerisation and Azure App Service hosted dashboard validation.
 
-The project will now mature toward regression evidence, CI/CD refinement, sustained telemetry validation, final demonstration preparation and Final Report evidence mapping.
+The project will now mature toward CI/CD refinement, selected automated tests, remaining bounded failure-mode evidence, sustained telemetry validation, final demonstration preparation and Final Report evidence mapping.
 
 Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain stretch goals until the core monitoring system is stable, validated and ready for demonstration.
