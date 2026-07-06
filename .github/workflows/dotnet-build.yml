@@ -1,4 +1,4 @@
-name: .NET build
+name: .NET build and test
 
 on:
   push:
@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build cloud and dashboard
+  build-and-test:
+    name: Build and test cloud and dashboard
     runs-on: ubuntu-latest
 
     steps:
@@ -33,3 +33,6 @@ jobs:
 
       - name: Build dashboard
         run: dotnet build ./dashboard/HiveWatch.Dashboard/HiveWatch.Dashboard.csproj --configuration Release
+
+      - name: Test dashboard logic
+        run: dotnet test ./dashboard/HiveWatch.Dashboard.Tests/HiveWatch.Dashboard.Tests.csproj --configuration Release
