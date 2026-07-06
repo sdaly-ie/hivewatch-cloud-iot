@@ -1,0 +1,35 @@
+name: .NET build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build cloud and dashboard
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Display .NET information
+        run: dotnet --info
+
+      - name: Build Azure Function
+        run: dotnet build ./cloud/HiveWatch.TelemetryIngestor/HiveWatch.TelemetryIngestor.csproj --configuration Release
+
+      - name: Build dashboard
+        run: dotnet build ./dashboard/HiveWatch.Dashboard/HiveWatch.Dashboard.csproj --configuration Release
