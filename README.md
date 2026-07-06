@@ -2,9 +2,9 @@
 
 HiveWatch Cloud IoT is built around a simple problem: a beekeeper cannot protect what they cannot see between inspections. Inside every productive hive is a nursery called the brood nest. This is where eggs, larvae and developing young bees depend on stable warmth. When that temperature falls, rises or becomes unstable for long enough, the colony may face higher risk of stress, poor development, disease-related problems or other issues that need attention.
 
-HiveWatch gives beekeepers remote visibility across dispersed apiary sites. Using a physical temperature sensor, it captures hive readings, sends them to the cloud, stores the data, and presents recent readings, alert bands, freshness status and baseline analytics on a dashboard that can be checked from home or while on the go. The system does not diagnose disease, queen failure, brood damage or colony loss.
+HiveWatch gives beekeepers remote visibility across dispersed apiary sites. Using a physical temperature sensor, it captures hive readings, sends them to the cloud, stores the data, and presents recent readings, alert bands, freshness status and baseline analytics on a dashboard that can be checked from home or while on the go.
 
-Instead, it gives beekeepers early warning signals so they can decide which hives deserve inspection first and combine remote telemetry with practical judgement at the hive. The goal is simple: fewer blind spots, faster attention and better informed hive management decisions.
+The system does not diagnose disease, queen failure, brood damage or colony loss. Instead, it gives beekeepers early warning signals so they can decide which hives deserve inspection first and combine remote telemetry with practical judgement at the hive. The goal is simple: fewer blind spots, faster attention and better informed hive management decisions.
 
 ---
 
@@ -22,7 +22,7 @@ Instead, it gives beekeepers early warning signals so they can decide which hive
 | Dashboard | ASP.NET Core Razor Pages dashboard, validated locally, in Docker and as an Azure-hosted prototype |
 | Deployment route | Docker image pushed to Azure Container Registry and hosted through Azure App Service for Containers |
 | Current dashboard behaviour | Latest reading, recent readings, fresh or stale state, temperature alert band, sustained-alert data sufficiency and baseline analytics |
-| Current validation status | Full bench chain, baseline analytics, local containerisation, Azure-hosted dashboard smoke validation and post-deployment regression achieved |
+| Current validation status | Full bench chain, baseline analytics, local containerisation, Azure-hosted dashboard validation, post-deployment regression, build-and-test CI and targeted dashboard logic tests completed |
 | Cost-control position | Dashboard App Service Plan scaled down from B1 Basic to F1 Free after validation for cost control. Basic Azure Container Registry is retained temporarily to reduce rework for later demonstrations and validation checks. |
 | Key boundary | Bench-validated and Azure-hosted prototype, not a production hive monitoring system or biological diagnosis tool |
 
@@ -44,16 +44,15 @@ The current implementation validates a real physical temperature reading travell
 | 8 | Docker container image | Packages the dashboard for repeatable container deployment |
 | 9 | Azure Container Registry | Stores the dashboard image used by Azure App Service |
 | 10 | Azure App Service for Containers | Hosts the dashboard as an Azure web application |
+| 11 | GitHub Actions | Builds the Azure Function and dashboard and runs targeted dashboard logic tests |
 
-A live DS18B20 bench reading of `19.50 °C` has been captured by the ESP32 device, posted over Wi-Fi and HTTPS to the hosted Azure Function, accepted with HTTP `200`, persisted in Azure Table Storage, retrieved through `GetRecentTelemetry`, and displayed in the Razor Pages dashboard as the latest reading with Fresh status and brood temperature alert classification.
+A live DS18B20 bench reading of `19.50 °C` was captured by the ESP32 device, posted over Wi-Fi and HTTPS to the hosted Azure Function, accepted with HTTP `200`, persisted in Azure Table Storage, retrieved through `GetRecentTelemetry`, and displayed in the Razor Pages dashboard as the latest reading with Fresh status and brood temperature alert classification.
 
-The dashboard has also been extended with baseline analytics. It summarises retrieved temperature telemetry using latest, minimum, maximum, average, median, reading count and a simple trend status.
+The dashboard was later extended with baseline analytics. It summarises retrieved temperature telemetry using latest, minimum, maximum, average, median, reading count and a simple trend status. On 02 June 2026, the containerised dashboard was deployed to Azure App Service for Containers and validated as an Azure-hosted prototype.
 
-On 02 June 2026, the containerised dashboard was deployed to Azure App Service for Containers and validated as an Azure-hosted prototype. The hosted dashboard returned HTTP `200 OK` over HTTPS and rendered latest temperature, recent readings, freshness, baseline analytics and brood-area alert status from the `GetRecentTelemetry` path.
+On 05 July 2026, a post-deployment regression pass revalidated the cloud and dashboard projects, physical ESP32-to-Azure ingestion, Azure Table Storage persistence, hosted retrieval, local dashboard rendering, Docker container execution and Azure-hosted dashboard rendering. This evidence supports prototype-level confidence and final demonstration readiness. It does not claim production hardening, live in-hive operation, sustained telemetry reliability, service-level availability or biological diagnosis.
 
-On 05 July 2026, a structured post-deployment regression run revalidated the cloud and dashboard builds, ESP32 Board 2 and DS18B20 ingestion, Azure Table Storage persistence, `GetRecentTelemetry` retrieval, invalid-limit HTTP `400` handling, local and Docker dashboard rendering, Docker runtime, Azure configuration and hosted HTTP `200` behaviour. The same reading later transitioned from Fresh to Stale as expected, providing additional evidence that the implemented freshness logic behaved correctly.
-
-Prototype boundary: this validates Azure-hosted dashboard deployment, smoke-test rendering and post-deployment regression at prototype level. It does not claim production hardening, live in-hive validation, sustained telemetry validation or biological diagnosis.
+On 06 July 2026, the project was refined with a minimal GitHub Actions build-and-test workflow and targeted xUnit tests for deterministic dashboard service-layer logic. The workflow builds the Azure Function and dashboard projects and runs the dashboard logic tests on pull requests and pushes to `main`.
 
 ---
 
@@ -88,6 +87,7 @@ flowchart LR
 | Docker container image | Packages the dashboard with a multi-stage .NET 8 build for container deployment |
 | Azure Container Registry | Stores the versioned dashboard image for App Service pull |
 | Azure App Service for Containers | Hosts the dashboard as a deployed Azure web application |
+| GitHub Actions | Provides build-and-test validation for pull requests and pushes to `main` |
 
 ---
 
@@ -110,7 +110,7 @@ The dashboard is read-only and has been validated in three forms:
 |---|---|
 | Local Razor Pages dashboard | Validated |
 | Local Docker container | Validated |
-| Azure App Service for Containers | Validated at prototype smoke-test level |
+| Azure App Service for Containers | Validated at prototype smoke-test and post-deployment regression level |
 
 ---
 
@@ -125,6 +125,7 @@ Current alert wording is intentionally cautious:
 | Temperature outside expected range | The hive may deserve inspection or closer attention |
 | Latest reading is stale | The dashboard may no longer reflect current hive conditions |
 | Not enough readings for sustained alert | The current value can be classified, but sustained confirmation is not yet available |
+| Sustained alert confirmed | Recent readings support an alert state, but this remains a telemetry signal requiring beekeeper judgement |
 
 This boundary matters because a bench temperature reading can validate system behaviour without proving the biological condition of a real hive.
 
@@ -151,10 +152,11 @@ This boundary matters because a bench temperature reading can validate system be
 | Expansion-board DS18B20 revalidation | Validated |
 | Local dashboard containerisation | Validated |
 | Azure dashboard deployment | Validated at prototype level and cost-controlled on F1 Free |
-| Post-deployment regression | Validated on 05 July 2026 |
-| Bounded failure-mode evidence | Partially validated through invalid-limit HTTP `400` handling and the Fresh-to-Stale transition |
-| CI/CD refinement | Planned — next implementation step |
-| Sustained telemetry validation | Planned — subsequent validation step |
+| Post-deployment regression evidence | Validated |
+| Build-and-test CI | Minimal GitHub Actions workflow added and validated |
+| Targeted automated tests | Added for deterministic dashboard alert and analytics logic |
+| Remaining bounded failure-mode evidence | Planned next baseline evidence task |
+| Sustained telemetry validation | Future milestone |
 
 ---
 
@@ -162,23 +164,45 @@ This boundary matters because a bench temperature reading can validate system be
 
 ### Post-deployment regression validation
 
-The post-deployment regression evidence is stored in:
-
-```text
-docs/evidence/2026-07-05-post-deployment-regression/
-```
+The post-deployment regression evidence is stored in [`docs/evidence/2026-07-05-post-deployment-regression/`](docs/evidence/2026-07-05-post-deployment-regression/).
 
 | Evidence artefact | What it demonstrates |
 |---|---|
-| [`post-deployment-regression-evidence-note.txt`](docs/evidence/2026-07-05-post-deployment-regression/post-deployment-regression-evidence-note.txt) | Concise outcome summary, evidence inventory and prototype boundary |
-| [`build-regression-cloud-dashboard-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/build-regression-cloud-dashboard-2026-07-05.jpg) | Azure Function Release build and Razor Pages dashboard build succeeded |
-| [`serial-monitor-ingestion-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/serial-monitor-ingestion-regression-2026-07-05.jpg) | ESP32 Board 2 detected one DS18B20 sensor and posted a fresh `23.12 °C` reading with HTTP `200` accepted |
-| [`azure-table-storage-persistence-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/azure-table-storage-persistence-regression-2026-07-05.jpg) | The fresh reading was persisted in Azure Table Storage |
-| [`get-recent-telemetry-retrieval-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/get-recent-telemetry-retrieval-regression-2026-07-05.jpg) | `GetRecentTelemetry` returned status `ok` and six readings |
-| [`invalid-limit-retrieval-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/invalid-limit-retrieval-regression-2026-07-05.jpg) | Invalid retrieval input returned HTTP `400` |
-| [`dashboard-local-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/dashboard-local-ui-regression-2026-07-05.jpg) | Local dashboard rendered the expected telemetry, freshness, alert and analytics panels |
-| [`dashboard-docker-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/dashboard-docker-ui-regression-2026-07-05.jpg) | The containerised dashboard rendered successfully on localhost |
-| [`azure-hosted-dashboard-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/azure-hosted-dashboard-ui-regression-2026-07-05.jpg) | The Azure-hosted dashboard rendered successfully and later displayed the expected Stale state |
+| [`serial-monitor-ingestion-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/serial-monitor-ingestion-regression-2026-07-05.jpg) | ESP32 Board 2, DS18B20 reading, JSON payload, hosted POST and HTTP `200` response |
+| [`azure-table-storage-persistence-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/azure-table-storage-persistence-regression-2026-07-05.jpg) | New telemetry row persisted in Azure Table Storage |
+| [`get-recent-telemetry-retrieval-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/get-recent-telemetry-retrieval-regression-2026-07-05.jpg) | Hosted retrieval endpoint returning recent telemetry |
+| [`invalid-limit-retrieval-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/invalid-limit-retrieval-regression-2026-07-05.jpg) | Invalid retrieval `limit` handled with HTTP `400` |
+| [`dashboard-local-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/dashboard-local-ui-regression-2026-07-05.jpg) | Local dashboard rendering latest reading, freshness, alert and analytics panels |
+| [`docker-image-build-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/docker-image-build-regression-2026-07-05.jpg) | Dashboard Docker image built successfully |
+| [`docker-container-runtime-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/docker-container-runtime-regression-2026-07-05.jpg) | Dashboard container running locally and returning HTTP `200` |
+| [`dashboard-docker-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/dashboard-docker-ui-regression-2026-07-05.jpg) | Docker-hosted dashboard rendering correctly |
+| [`azure-hosted-dashboard-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/azure-hosted-dashboard-ui-regression-2026-07-05.jpg) | Azure-hosted dashboard rendering correctly after deployment |
+| [`post-deployment-regression-evidence-note.txt`](docs/evidence/2026-07-05-post-deployment-regression/post-deployment-regression-evidence-note.txt) | Text note summarising regression scope, evidence and prototype boundary |
+
+### CI and automated test validation
+
+The repository now includes a GitHub Actions workflow at [`.github/workflows/dotnet-build.yml`](.github/workflows/dotnet-build.yml).
+
+The workflow currently:
+
+| Workflow step | Purpose |
+|---|---|
+| Setup .NET 8 | Prepares the GitHub-hosted runner |
+| Build Azure Function | Builds the telemetry ingestor project in Release configuration |
+| Build dashboard | Builds the Razor Pages dashboard in Release configuration |
+| Test dashboard logic | Runs targeted xUnit tests for dashboard service-layer logic |
+
+The dashboard test suite is stored in [`dashboard/HiveWatch.Dashboard.Tests/`](dashboard/HiveWatch.Dashboard.Tests/).
+
+Current targeted tests cover:
+
+| Test area | Behaviour covered |
+|---|---|
+| No telemetry | Safe empty-state behaviour |
+| Brood temperature alert classification | Cold deviation and reference-range classification |
+| Sustained-alert behaviour | Not enough data versus confirmed sustained alert |
+| Telemetry analytics | Count, latest, minimum, maximum, average and median |
+| Trend classification | Rising, stable and falling trend states |
 
 ### Azure dashboard deployment validation
 
@@ -220,7 +244,6 @@ docs/evidence/2026-05-25-baseline-analytics/
 |---|---|
 | [`dashboard-baseline-analytics.jpg`](docs/evidence/2026-05-25-baseline-analytics/dashboard-baseline-analytics.jpg) | Local dashboard baseline analytics panel showing latest, minimum, maximum, average, median, trend, recent readings and alert context |
 
-
 ### Fresh full chain validation
 
 The fresh validation evidence is stored in:
@@ -258,6 +281,8 @@ docs/evidence/2026-05-23-fresh-full-chain-validation/
 | Storage integration | Azure.Data.Tables client library, `TelemetryReadings` table |
 | Retrieval path | HTTP GET Function endpoint, latest and recent stored telemetry JSON read back |
 | Dashboard | ASP.NET Core Razor Pages, typed `HttpClient`, Bootstrap-based Razor Pages UI |
+| Dashboard logic tests | xUnit, Microsoft.NET.Test.Sdk, deterministic service-layer tests |
+| CI validation | GitHub Actions build-and-test workflow |
 | Containerisation | Docker Desktop, multi-stage .NET 8 Dockerfile, root `.dockerignore`, local dashboard image build |
 | Azure dashboard hosting | Azure Container Registry, Azure App Service for Containers, Linux Web App, App Service Plan, managed identity, AcrPull, Azure CLI |
 | Validation and integration testing | Arduino Serial Monitor, Webhook.site remote POST smoke test, PowerShell REST checks, Azure Table Storage inspection, local browser checks, Docker runtime checks, hosted Azure HTTP smoke checks |
@@ -271,12 +296,12 @@ The firmware proofs are retained in the order used to reduce implementation risk
 
 | Stage | Purpose |
 |---|---|
-| `01_one_wire_scanner_test` | Detect the DS18B20 probe on the 1-Wire bus |
-| `02_live_temperature_readings` | Produce live local temperature readings in the Serial Monitor |
-| `03_wifi_connection_only_test` | Prove ESP32 Wi-Fi connectivity independently of the sensor |
-| `04_remote_webhook_telemetry_smoke_test` | POST live temperature telemetry to a temporary Webhook.site endpoint |
-| `05_local_azure_function_post_test` | Test the device-side POST shape against a laptop-local Azure Function route during integration work |
-| `06_hosted_azure_function_post_test` | POST live temperature telemetry to the hosted Azure Function endpoint |
+| [`01_one_wire_scanner_test`](firmware/proofs/01_one_wire_scanner_test) | Detect the DS18B20 probe on the 1-Wire bus |
+| [`02_live_temperature_readings`](firmware/proofs/02_live_temperature_readings) | Produce live local temperature readings in the Serial Monitor |
+| [`03_wifi_connection_only_test`](firmware/proofs/03_wifi_connection_only_test) | Prove ESP32 Wi-Fi connectivity independently of the sensor |
+| [`04_remote_webhook_telemetry_smoke_test`](firmware/proofs/04_remote_webhook_telemetry_smoke_test) | POST live temperature telemetry to a temporary Webhook.site endpoint |
+| [`05_local_azure_function_post_test`](firmware/proofs/05_local_azure_function_post_test) | Test the device-side POST shape against a laptop-local Azure Function route during integration work |
+| [`06_hosted_azure_function_post_test`](firmware/proofs/06_hosted_azure_function_post_test) | POST live temperature telemetry to the hosted Azure Function endpoint |
 
 This staged approach keeps the project traceable and makes the progression from device validation to cloud ingestion explicit.
 
@@ -409,26 +434,30 @@ After hosted validation, the App Service Plan was scaled from B1 Basic to F1 Fre
 
 ```text
 hivewatch-cloud-iot/
-├── cloud/
-│   ├── HiveWatch.TelemetryIngestor.slnx
-│   └── HiveWatch.TelemetryIngestor/
-├── dashboard/
-│   ├── HiveWatch.Dashboard.slnx
-│   └── HiveWatch.Dashboard/
-│       └── Dockerfile
-├── docs/
-│   ├── evidence/
-│   │   ├── 2026-05-23-fresh-full-chain-validation/
-│   │   ├── 2026-05-25-baseline-analytics/
-│   │   ├── 2026-05-29-expansion-board-ds18b20-revalidation/
-│   │   ├── 2026-06-02-azure-dashboard-deployment/
-│   │   └── 2026-07-05-post-deployment-regression/
-│   └── images/
-├── firmware/
-│   └── proofs/
-├── .dockerignore
-├── .gitignore
-└── README.md
+|-- .github/
+|   `-- workflows/
+|       `-- dotnet-build.yml
+|-- cloud/
+|   |-- HiveWatch.TelemetryIngestor.slnx
+|   `-- HiveWatch.TelemetryIngestor/
+|-- dashboard/
+|   |-- HiveWatch.Dashboard.slnx
+|   |-- HiveWatch.Dashboard/
+|   |   `-- Dockerfile
+|   `-- HiveWatch.Dashboard.Tests/
+|-- docs/
+|   |-- evidence/
+|   |   |-- 2026-05-23-fresh-full-chain-validation/
+|   |   |-- 2026-05-25-baseline-analytics/
+|   |   |-- 2026-05-29-expansion-board-ds18b20-revalidation/
+|   |   |-- 2026-06-02-azure-dashboard-deployment/
+|   |   `-- 2026-07-05-post-deployment-regression/
+|   `-- images/
+|-- firmware/
+|   `-- proofs/
+|-- .dockerignore
+|-- .gitignore
+`-- README.md
 ```
 
 ---
@@ -476,24 +505,22 @@ This kept early HTTPS smoke tests simple. A hardened production version would us
 
 ## Remaining baseline work
 
-Post-deployment regression was completed on 05 July 2026. The next development step is controlled baseline closure rather than proving the core chain again.
+The next development steps are controlled evidence closure and final submission preparation, not proving the core chain again.
 
 | Priority | Next work |
 |---|---|
-| 1 | Add a minimal GitHub Actions workflow that builds the Azure Function and dashboard |
-| 2 | Add targeted automated tests for stable, high-value application logic |
-| 3 | Complete any remaining bounded failure-mode evidence |
-| 4 | Prepare, execute and analyse a sustained bench telemetry run with expected versus received readings, storage evidence, dashboard evidence and interruption notes |
-| 5 | Close the baseline, update project-control records and prepare the Final Report, presentation and demonstration |
+| 1 | Complete the remaining bounded failure-mode evidence, avoiding new code unless a genuine defect is found |
+| 2 | Prepare, execute and analyse a sustained bench telemetry run |
+| 3 | Update project-control records after the sustained run and evidence closure |
+| 4 | Prepare final demonstration assets and demo script |
+| 5 | Complete Final Report evidence mapping and final submission checks |
 
-The project now has a validated technical baseline, local and Docker runtime evidence, Azure-hosted deployment evidence and a completed post-deployment regression run. The next phase is CI refinement, sustained validation, baseline closure and assessed-submission preparation.
+The project now has a validated technical baseline, Azure-hosted dashboard evidence, post-deployment regression evidence, minimal build-and-test CI and targeted dashboard logic tests. The next phase is evidence closure, sustained telemetry validation and final presentation readiness.
 
 ---
 
 ## Project direction
 
-HiveWatch Cloud IoT now has a working baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, Docker containerisation and Azure App Service hosted dashboard validation.
+HiveWatch Cloud IoT now has a working baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, Docker containerisation, Azure App Service hosted dashboard validation, post-deployment regression and automated build-and-test checks.
 
-The project will now mature toward CI/CD refinement, selected automated tests, remaining bounded failure-mode evidence, sustained telemetry validation, final demonstration preparation and Final Report evidence mapping.
-
-Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain stretch goals until the core monitoring system is stable, validated and ready for demonstration.
+The project will now mature toward remaining bounded failure-mode evidence, sustained telemetry validation, final demonstration preparation and Final Report evidence mapping. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain stretch goals until the core monitoring system is stable, validated and ready for demonstration.
