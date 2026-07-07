@@ -1,0 +1,32 @@
+HiveWatch bounded failure-mode evidence note
+Date: 2026-07-07
+
+Scope
+This evidence records two bounded negative-path checks against the hosted IngestTelemetry endpoint.
+
+Checks performed
+1. Invalid JSON ingestion payload
+   - Expected result: HTTP 400 Bad Request
+   - Observed result: HTTP 400
+   - Response status: rejected
+   - Message: Invalid JSON payload.
+
+2. Missing required telemetry fields
+   - Expected result: HTTP 400 Bad Request
+   - Observed result: HTTP 400
+   - Response status: rejected
+   - Validation errors observed:
+     - device_id is required.
+     - value is required.
+
+Purpose
+These checks demonstrate that the hosted ingestion endpoint rejects malformed or incomplete telemetry before it can be accepted as valid telemetry. This supports the capstone failure-mode evidence requirement at prototype level.
+
+Evidence artefact
+- bounded-failure-mode-terminal-output-2026-07-07.txt
+
+Boundary
+This evidence supports bounded prototype-level failure-mode confidence. It does not prove production security hardening, service-level availability, live in-hive operation, malicious traffic resistance or full API test coverage.
+
+Endpoint handling
+The hosted endpoint was used during the test but is not printed or stored in the evidence artefact.
