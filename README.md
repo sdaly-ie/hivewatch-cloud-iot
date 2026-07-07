@@ -22,7 +22,7 @@ The system does not diagnose disease, queen failure, brood damage or colony loss
 | Dashboard | ASP.NET Core Razor Pages dashboard, validated locally, in Docker and as an Azure-hosted prototype |
 | Deployment route | Docker image pushed to Azure Container Registry and hosted through Azure App Service for Containers |
 | Current dashboard behaviour | Latest reading, recent readings, fresh or stale state, temperature alert band, sustained-alert data sufficiency and baseline analytics |
-| Current validation status | Full bench chain, baseline analytics, local containerisation, Azure-hosted dashboard validation, post-deployment regression, build-and-test CI and targeted dashboard logic tests completed |
+| Current validation status | Full bench chain, baseline analytics, local containerisation, Azure-hosted dashboard validation, post-deployment regression, bounded failure-mode evidence, build-and-test CI and targeted dashboard logic tests completed |
 | Cost-control position | Dashboard App Service Plan scaled down from B1 Basic to F1 Free after validation for cost control. Basic Azure Container Registry is retained temporarily to reduce rework for later demonstrations and validation checks. |
 | Key boundary | Bench-validated and Azure-hosted prototype, not a production hive monitoring system or biological diagnosis tool |
 
@@ -48,11 +48,15 @@ The current implementation validates a real physical temperature reading travell
 
 A live DS18B20 bench reading of `19.50 °C` was captured by the ESP32 device, posted over Wi-Fi and HTTPS to the hosted Azure Function, accepted with HTTP `200`, persisted in Azure Table Storage, retrieved through `GetRecentTelemetry`, and displayed in the Razor Pages dashboard as the latest reading with Fresh status and brood temperature alert classification.
 
-The dashboard was later extended with baseline analytics. It summarises retrieved temperature telemetry using latest, minimum, maximum, average, median, reading count and a simple trend status. On 02 June 2026, the containerised dashboard was deployed to Azure App Service for Containers and validated as an Azure-hosted prototype.
+The dashboard was later extended with baseline analytics. It summarises retrieved temperature telemetry using latest, minimum, maximum, average, median, reading count and a simple trend status. The containerised dashboard was also deployed to Azure App Service for Containers and validated as an Azure-hosted prototype.
 
-On 05 July 2026, a post-deployment regression pass revalidated the cloud and dashboard projects, physical ESP32-to-Azure ingestion, Azure Table Storage persistence, hosted retrieval, local dashboard rendering, Docker container execution and Azure-hosted dashboard rendering. This evidence supports prototype-level confidence and final demonstration readiness. It does not claim production hardening, live in-hive operation, sustained telemetry reliability, service-level availability or biological diagnosis.
+Following the Azure deployment milestone, a focused evidence-closure sprint was completed. This work revalidated the deployed cloud and dashboard path, added minimal CI and targeted dashboard logic tests, and captured bounded failure-mode evidence for the hosted ingestion endpoint.
 
-On 06 July 2026, the project was refined with a minimal GitHub Actions build-and-test workflow and targeted xUnit tests for deterministic dashboard service-layer logic. The workflow builds the Azure Function and dashboard projects and runs the dashboard logic tests on pull requests and pushes to `main`.
+The post-deployment regression evidence revalidated the cloud and dashboard projects, physical ESP32-to-Azure ingestion, Azure Table Storage persistence, hosted retrieval, local dashboard rendering, Docker container execution and Azure-hosted dashboard rendering. This supports prototype-level confidence and final demonstration readiness. It does not claim production hardening, live in-hive operation, sustained telemetry reliability, service-level availability or biological diagnosis.
+
+The project was also strengthened with a minimal GitHub Actions build-and-test workflow and targeted xUnit tests for deterministic dashboard service-layer logic. The workflow builds the Azure Function and dashboard projects and runs the dashboard logic tests on pull requests and pushes to `main`.
+
+Bounded failure-mode evidence was added for the hosted `IngestTelemetry` endpoint. Invalid JSON and missing required telemetry field checks both returned HTTP `400` responses. This supports prototype-level failure-mode confidence without claiming production security hardening, service-level availability, malicious traffic resistance or full API test coverage.
 
 ---
 
@@ -155,7 +159,7 @@ This boundary matters because a bench temperature reading can validate system be
 | Post-deployment regression evidence | Validated |
 | Build-and-test CI | Minimal GitHub Actions workflow added and validated |
 | Targeted automated tests | Added for deterministic dashboard alert and analytics logic |
-| Remaining bounded failure-mode evidence | Planned next baseline evidence task |
+| Bounded failure-mode evidence | Validated for invalid JSON and missing required telemetry fields |
 | Sustained telemetry validation | Future milestone |
 
 ---
@@ -178,6 +182,15 @@ The post-deployment regression evidence is stored in [`docs/evidence/2026-07-05-
 | [`dashboard-docker-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/dashboard-docker-ui-regression-2026-07-05.jpg) | Docker-hosted dashboard rendering correctly |
 | [`azure-hosted-dashboard-ui-regression-2026-07-05.jpg`](docs/evidence/2026-07-05-post-deployment-regression/azure-hosted-dashboard-ui-regression-2026-07-05.jpg) | Azure-hosted dashboard rendering correctly after deployment |
 | [`post-deployment-regression-evidence-note.txt`](docs/evidence/2026-07-05-post-deployment-regression/post-deployment-regression-evidence-note.txt) | Text note summarising regression scope, evidence and prototype boundary |
+
+### Bounded failure-mode validation
+
+The bounded failure-mode evidence is stored in [`docs/evidence/2026-07-07-bounded-failure-mode-evidence/`](docs/evidence/2026-07-07-bounded-failure-mode-evidence/).
+
+| Evidence artefact | What it demonstrates |
+|---|---|
+| [`bounded-failure-mode-terminal-output-2026-07-07.txt`](docs/evidence/2026-07-07-bounded-failure-mode-evidence/bounded-failure-mode-terminal-output-2026-07-07.txt) | Hosted `IngestTelemetry` rejected invalid JSON and missing required telemetry fields with HTTP `400` responses |
+| [`bounded-failure-mode-evidence-note.txt`](docs/evidence/2026-07-07-bounded-failure-mode-evidence/bounded-failure-mode-evidence-note.txt) | Summarises scope, purpose, endpoint handling and prototype boundary for the bounded failure-mode evidence |
 
 ### CI and automated test validation
 
@@ -451,7 +464,8 @@ hivewatch-cloud-iot/
 |   |   |-- 2026-05-25-baseline-analytics/
 |   |   |-- 2026-05-29-expansion-board-ds18b20-revalidation/
 |   |   |-- 2026-06-02-azure-dashboard-deployment/
-|   |   `-- 2026-07-05-post-deployment-regression/
+|   |   |-- 2026-07-05-post-deployment-regression/
+|   |   `-- 2026-07-07-bounded-failure-mode-evidence/
 |   `-- images/
 |-- firmware/
 |   `-- proofs/
@@ -505,22 +519,21 @@ This kept early HTTPS smoke tests simple. A hardened production version would us
 
 ## Remaining baseline work
 
-The next development steps are controlled evidence closure and final submission preparation, not proving the core chain again.
+The next development steps are sustained telemetry validation and final submission preparation, not proving the core chain again.
 
 | Priority | Next work |
 |---|---|
-| 1 | Complete the remaining bounded failure-mode evidence, avoiding new code unless a genuine defect is found |
-| 2 | Prepare, execute and analyse a sustained bench telemetry run |
-| 3 | Update project-control records after the sustained run and evidence closure |
-| 4 | Prepare final demonstration assets and demo script |
-| 5 | Complete Final Report evidence mapping and final submission checks |
+| 1 | Prepare, execute and analyse a sustained bench telemetry run |
+| 2 | Update project-control records after sustained telemetry validation and evidence closure |
+| 3 | Prepare final demonstration assets and demo script |
+| 4 | Complete Final Report evidence mapping and final submission checks |
 
-The project now has a validated technical baseline, Azure-hosted dashboard evidence, post-deployment regression evidence, minimal build-and-test CI and targeted dashboard logic tests. The next phase is evidence closure, sustained telemetry validation and final presentation readiness.
+The project now has a validated technical baseline, Azure-hosted dashboard evidence, post-deployment regression evidence, bounded failure-mode evidence, minimal build-and-test CI and targeted dashboard logic tests. The next phase is sustained telemetry validation, final presentation readiness and Final Report evidence mapping.
 
 ---
 
 ## Project direction
 
-HiveWatch Cloud IoT now has a working baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, Docker containerisation, Azure App Service hosted dashboard validation, post-deployment regression and automated build-and-test checks.
+HiveWatch Cloud IoT now has a working baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, Docker containerisation, Azure App Service hosted dashboard validation, post-deployment regression, bounded failure-mode evidence and automated build-and-test checks.
 
-The project will now mature toward remaining bounded failure-mode evidence, sustained telemetry validation, final demonstration preparation and Final Report evidence mapping. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain stretch goals until the core monitoring system is stable, validated and ready for demonstration.
+The project will now mature toward sustained telemetry validation, final demonstration preparation and Final Report evidence mapping. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain stretch goals until the core monitoring system is stable, validated and ready for demonstration.
