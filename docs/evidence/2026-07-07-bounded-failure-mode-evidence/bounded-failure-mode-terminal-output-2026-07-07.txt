@@ -1,0 +1,14 @@
+HiveWatch bounded failure-mode evidence
+Date: 2026-07-07
+Scope: Hosted IngestTelemetry negative-path checks
+Endpoint: not printed or stored
+
+Check: Invalid JSON ingestion payload
+Observed HTTP status: 400
+Response body:
+{"status":"rejected","message":"Invalid JSON payload."}
+
+Check: Missing required telemetry fields
+Observed HTTP status: 400
+Response body:
+{"status":"rejected","message":"Telemetry payload failed validation.","errors":["device_id is required.","value is required."]}
