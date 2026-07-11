@@ -1,0 +1,25 @@
+HiveWatch sustained hosted telemetry dry-run evidence note
+Date: 2026-07-11
+Scope: ESP32 Board 2, DS18B20 temperature probe, hosted Azure Function, Azure Table Storage
+Firmware proof: firmware/proofs/07_sustained_hosted_telemetry_run/07_sustained_hosted_telemetry_run.ino
+
+Summary:
+This evidence records a successful sustained telemetry dry run from ESP32 Board 2 using the DS18B20 temperature probe. The firmware sent one immediate reading after boot and continued at a five-minute interval. The dry run confirmed repeated temperature capture, Wi-Fi connection, HTTPS POST to the hosted HiveWatch Azure Function, HTTP 200 responses, accepted telemetry responses, and persistence of readings in Azure Table Storage.
+
+Observed outcome:
+- ESP32 Board 2 booted successfully.
+- DS18B20 sensor was detected.
+- Wi-Fi connected successfully.
+- Temperature readings were captured during the run.
+- Hosted Azure Function returned HTTP 200.
+- Telemetry response body showed accepted status.
+- Serial Monitor counter reached Successful POST count: 4.
+- Serial Monitor counter showed Failed/skipped POST count: 0.
+- Azure Table Storage showed persisted TelemetryReadings rows for hivewatch-esp32-board2 / ds18b20-1.
+
+Evidence files:
+- sustained-hosted-telemetry-dry-run-multiple-posts-accepted-2026-07-11.jpg
+- azure-table-storage-sustained-telemetry-persistence-2026-07-11.jpg
+
+Boundary:
+This is sustained bench-validation evidence for the capstone prototype. It does not claim production readiness, field deployment readiness, or biological hive-condition diagnosis.
