@@ -26,3 +26,5 @@ Thumbs.db
 cloud/HiveWatch.TelemetryIngestor/Properties/PublishProfiles/
 cloud/HiveWatch.TelemetryIngestor/Properties/ServiceDependencies/
 cloud/HiveWatch.TelemetryIngestor/Properties/serviceDependencies*.json
+
+**/arduino_secrets.h
