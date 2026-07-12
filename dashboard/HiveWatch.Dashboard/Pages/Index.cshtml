@@ -9,6 +9,9 @@
     <p class="lead">
         Dashboard-facing monitoring view using the hosted GetRecentTelemetry retrieval path.
     </p>
+    <p class="text-muted small mb-0">
+        Automatic dashboard refresh is enabled every 5 minutes 30 seconds.
+    </p>
 </section>
 
 @if (Model.HasError)
@@ -271,5 +274,12 @@ else
         </div>
     </div>
 }
+@section Scripts {
+    <script>
+        const dashboardRefreshIntervalMs = 330000;
 
-
+        window.setTimeout(function () {
+            window.location.reload();
+        }, dashboardRefreshIntervalMs);
+    </script>
+}
