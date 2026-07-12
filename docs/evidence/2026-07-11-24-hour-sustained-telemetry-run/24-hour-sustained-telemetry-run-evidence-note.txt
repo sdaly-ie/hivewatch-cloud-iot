@@ -1,0 +1,101 @@
+﻿HiveWatch Cloud IoT - 24-Hour Sustained Bench Telemetry Run
+CT5222 Capstone Project
+
+Run status:
+Complete - passed with minor documented interruptions
+
+VALIDATION WINDOW
+
+Official start:
+2026-07-11 16:20:48 UTC
+2026-07-11 17:20:48 Irish local time
+
+Formal 24-hour end:
+2026-07-12 16:20:48 UTC
+2026-07-12 17:20:48 Irish local time
+
+Telemetry interval:
+Nominal five-minute interval
+
+POWER AND PHYSICAL SETUP
+
+Power source:
+Independent USB socket integrated into a mains-powered extension lead connected to a household wall socket.
+
+Hardware:
+- ESP32 validated baseline development board
+- DS18B20 waterproof temperature probe
+- Prototype expansion-board and breadboard wiring
+
+The ESP32 ran independently of the development laptop during the formal validation period.
+
+RESULTS
+
+Ideal expected readings:
+289
+
+Persisted readings within the exact formal 24-hour window:
+285
+
+Delivery rate against the ideal five-minute schedule:
+98.62 percent
+
+Full export readings, including continued operation after the formal stop:
+292
+
+Final exported timestamp:
+2026-07-12 16:53:50 UTC
+
+Minimum temperature during formal window:
+23.25 C
+
+Maximum temperature during formal window:
+26.44 C
+
+Mean temperature during formal window:
+24.82 C
+
+Median temperature during formal window:
+24.69 C
+
+INTERRUPTIONS AND GAP ANALYSIS
+
+Two material gaps were identified:
+
+- 2026-07-12 09:52:58 UTC to 2026-07-12 10:08:00 UTC: 901.5 seconds
+- 2026-07-12 08:32:48 UTC to 2026-07-12 08:42:49 UTC: 601.2 seconds
+
+The approximately 10-minute gap represents one likely missed five-minute transmission.
+The approximately 15-minute gap represents two likely missed five-minute transmissions.
+
+Telemetry resumed automatically after both gaps without manual intervention. Small cumulative timing drift also affected the number of readings falling inside the exact 24-hour boundary.
+
+EVIDENCE FILES
+
+- 24-hour-sustained-telemetry-export-2026-07-12.csv
+  Full exported dataset extending beyond the formal validation stop.
+
+- 24-hour-sustained-telemetry-formal-window-2026-07-12.csv
+  Dataset restricted to the exact formal 24-hour validation window.
+
+- 24-hour-sustained-telemetry-raw-export-2026-07-12.json
+  Raw Azure Table Storage query result.
+
+- azure-table-storage-24-hour-sustained-telemetry-final-state-2026-07-12.jpg
+  Visual confirmation of continued Azure Table Storage persistence.
+
+- azure-hosted-dashboard-24-hour-sustained-telemetry-final-state-2026-07-12.jpg
+  Hosted dashboard displaying current telemetry, Fresh status, analytics, alert status and recent readings after the formal window.
+
+- physical-bench-setup-24-hour-sustained-telemetry-run-2026-07-11.jpg
+  Physical prototype bench arrangement used for independently powered validation.
+
+VALIDATION CONCLUSION
+
+The 24-hour sustained bench telemetry milestone passed at prototype level. The independently mains-powered ESP32 continued sensing, transmitting and persisting temperature telemetry for more than 24 hours. The formal window contained 285 persisted readings, representing 98.62 percent delivery against the ideal five-minute schedule.
+
+Two bounded interruption periods were identified. The system resumed telemetry automatically after both gaps and continued operating beyond the required duration.
+
+VALIDATION BOUNDARY
+
+This evidence supports sustained bench operation of the HiveWatch prototype. It does not demonstrate production reliability, service-level availability, live in-hive performance, field-ready electrical or mechanical construction, commercial readiness or biological diagnosis.
