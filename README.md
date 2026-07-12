@@ -22,7 +22,7 @@ The system does not diagnose disease, queen failure, brood damage or colony loss
 | Dashboard | ASP.NET Core Razor Pages dashboard, validated locally, in Docker and as an Azure-hosted prototype |
 | Deployment route | Docker image pushed to Azure Container Registry and hosted through Azure App Service for Containers |
 | Current dashboard behaviour | Latest reading, recent readings, fresh or stale state, temperature alert band, sustained-alert data sufficiency and baseline analytics |
-| Current validation status | Full bench chain, baseline analytics, local containerisation, Azure-hosted dashboard validation, post-deployment regression, bounded failure-mode evidence, short sustained hosted telemetry dry run, build-and-test CI and targeted dashboard logic tests completed |
+| Current validation status | Full bench chain, baseline analytics, local containerisation, Azure-hosted dashboard validation, post-deployment regression, bounded failure-mode evidence, short sustained hosted telemetry dry run, full 24-hour sustained bench telemetry validation, build-and-test CI and targeted dashboard logic tests completed |
 | Cost-control position | Dashboard App Service Plan scaled down from B1 Basic to F1 Free after validation for cost control. Basic Azure Container Registry is retained temporarily to reduce rework for later demonstrations and validation checks. |
 | Key boundary | Bench-validated and Azure-hosted prototype, not a production hive monitoring system or biological diagnosis tool |
 
@@ -52,13 +52,15 @@ The dashboard was later extended with baseline analytics. It summarises retrieve
 
 Following the Azure deployment milestone, a focused evidence-closure sprint was completed. This work revalidated the deployed cloud and dashboard path, added minimal CI and targeted dashboard logic tests, and captured bounded failure-mode evidence for the hosted ingestion endpoint.
 
-The post-deployment regression evidence revalidated the cloud and dashboard projects, physical ESP32-to-Azure ingestion, Azure Table Storage persistence, hosted retrieval, local dashboard rendering, Docker container execution and Azure-hosted dashboard rendering. This supports prototype-level confidence and final demonstration readiness. It does not claim production hardening, live in-hive operation, long-duration sustained telemetry reliability, service-level availability or biological diagnosis.
+The post-deployment regression evidence revalidated the cloud and dashboard projects, physical ESP32-to-Azure ingestion, Azure Table Storage persistence, hosted retrieval, local dashboard rendering, Docker container execution and Azure-hosted dashboard rendering. This supports prototype-level confidence and final demonstration readiness. It does not claim production hardening, live in-hive operation, service-level availability or biological diagnosis.
 
 The project was also strengthened with a minimal GitHub Actions build-and-test workflow and targeted xUnit tests for deterministic dashboard service-layer logic. The workflow builds the Azure Function and dashboard projects and runs the dashboard logic tests on pull requests and pushes to `main`.
 
 Bounded failure-mode evidence was added for the hosted `IngestTelemetry` endpoint. Invalid JSON and missing required telemetry field checks both returned HTTP `400` responses. This supports prototype-level failure-mode confidence without claiming production security hardening, service-level availability, malicious traffic resistance or full API test coverage.
 
-A short sustained hosted telemetry dry run was later completed using the ESP32 board and the DS18B20 probe. The sustained proof sent one immediate reading after boot and continued at a five-minute interval. Four consecutive telemetry attempts were accepted with HTTP `200`, the Serial Monitor recorded `Successful POST count: 4` and `Failed/skipped POST count: 0`, and the resulting readings were confirmed in Azure Table Storage. This validates sustained bench behaviour at short dry-run level; it does not replace a longer 24-hour sustained run.
+A short sustained hosted telemetry dry run was later completed using the ESP32 board and the DS18B20 probe. The sustained proof sent one immediate reading after boot and continued at a five-minute interval. Four consecutive telemetry attempts were accepted with HTTP `200`, the Serial Monitor recorded `Successful POST count: 4` and `Failed/skipped POST count: 0`, and the resulting readings were confirmed in Azure Table Storage. This established readiness for the longer sustained validation.
+
+A full 24-hour sustained bench telemetry validation was subsequently completed using an independently mains-powered ESP32 and DS18B20 probe. The exact formal window contained 285 persisted readings against an ideal 289-reading five-minute schedule, representing 98.62% delivery. Two bounded interruption periods of approximately 10 and 15 minutes were identified. Telemetry resumed without manual intervention after both gaps and continued beyond the required 24-hour duration. This supports sustained prototype-level bench operation, not production reliability, field readiness, service-level availability, live in-hive performance or biological diagnosis.
 
 ---
 
@@ -163,7 +165,7 @@ This boundary matters because a bench temperature reading can validate system be
 | Targeted automated tests | Added for deterministic dashboard alert and analytics logic |
 | Bounded failure-mode evidence | Validated for invalid JSON and missing required telemetry fields |
 | Sustained hosted telemetry dry run | Validated at short bench-run level with four accepted interval posts and Azure Table Storage persistence |
-| 24-hour sustained telemetry run | Next milestone |
+| 24-hour sustained telemetry run | Validated at prototype bench level: 285 persisted readings in the exact formal window, 98.62% delivery against the ideal schedule, two bounded gaps, with telemetry resuming without manual intervention |
 
 ---
 
@@ -204,6 +206,22 @@ The sustained hosted telemetry dry-run evidence is stored in [`docs/evidence/202
 | [`sustained-hosted-telemetry-dry-run-multiple-posts-accepted-2026-07-11.jpg`](docs/evidence/2026-07-11-sustained-hosted-telemetry-run/sustained-hosted-telemetry-dry-run-multiple-posts-accepted-2026-07-11.jpg) | ESP32 board, DS18B20 detection, Wi-Fi connection, repeated five-minute telemetry attempts, HTTP `200` responses, `Successful POST count: 4` and `Failed/skipped POST count: 0` |
 | [`azure-table-storage-sustained-telemetry-persistence-2026-07-11.jpg`](docs/evidence/2026-07-11-sustained-hosted-telemetry-run/azure-table-storage-sustained-telemetry-persistence-2026-07-11.jpg) | Persisted `TelemetryReadings` rows for the ESP32 board and DS18B20 sensor after the sustained dry run |
 | [`sustained-hosted-telemetry-run-evidence-note.txt`](docs/evidence/2026-07-11-sustained-hosted-telemetry-run/sustained-hosted-telemetry-run-evidence-note.txt) | Summarises sustained dry-run scope, observed outcome, evidence files and prototype boundary |
+
+### Full 24-hour sustained bench telemetry validation
+
+The full sustained-run evidence is stored in [`docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/).
+
+The formal validation window ran from `2026-07-11 16:20:48 UTC` to `2026-07-12 16:20:48 UTC`. It contained 285 persisted readings against an ideal 289-reading five-minute schedule. Two bounded gaps were identified, after which telemetry resumed without manual intervention. The independently powered prototype continued operating beyond the formal stop time.
+
+| Evidence artefact | What it demonstrates |
+|---|---|
+| [`24-hour-sustained-telemetry-run-evidence-note.txt`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/24-hour-sustained-telemetry-run-evidence-note.txt) | Validation window, expected-versus-received analysis, temperature statistics, gap analysis, conclusion and prototype boundary |
+| [`24-hour-sustained-telemetry-formal-window-2026-07-12.csv`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/24-hour-sustained-telemetry-formal-window-2026-07-12.csv) | The 285 telemetry records falling inside the exact formal 24-hour window |
+| [`24-hour-sustained-telemetry-export-2026-07-12.csv`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/24-hour-sustained-telemetry-export-2026-07-12.csv) | Full run export showing continued telemetry beyond the required duration |
+| [`24-hour-sustained-telemetry-raw-export-2026-07-12.json`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/24-hour-sustained-telemetry-raw-export-2026-07-12.json) | Raw Azure Table Storage query result retained for traceability |
+| [`azure-table-storage-24-hour-sustained-telemetry-final-state-2026-07-12.jpg`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/azure-table-storage-24-hour-sustained-telemetry-final-state-2026-07-12.jpg) | Continued persistence of telemetry in Azure Table Storage after the formal validation window |
+| [`azure-hosted-dashboard-24-hour-sustained-telemetry-final-state-2026-07-12.jpg`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/azure-hosted-dashboard-24-hour-sustained-telemetry-final-state-2026-07-12.jpg) | Hosted dashboard retrieving current telemetry and displaying Fresh status, analytics, alert status and recent readings |
+| [`physical-bench-setup-24-hour-sustained-telemetry-run-2026-07-11.jpg`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/physical-bench-setup-24-hour-sustained-telemetry-run-2026-07-11.jpg) | Independently powered ESP32, DS18B20 probe and prototype bench arrangement used during the sustained validation |
 
 ### CI and automated test validation
 
@@ -480,7 +498,8 @@ hivewatch-cloud-iot/
 |   |   |-- 2026-06-02-azure-dashboard-deployment/
 |   |   |-- 2026-07-05-post-deployment-regression/
 |   |   |-- 2026-07-07-bounded-failure-mode-evidence/
-|   |   `-- 2026-07-11-sustained-hosted-telemetry-run/
+|   |   |-- 2026-07-11-sustained-hosted-telemetry-run/
+|   |   `-- 2026-07-11-24-hour-sustained-telemetry-run/
 |   `-- images/
 |-- firmware/
 |   `-- proofs/
@@ -537,21 +556,21 @@ This kept early HTTPS smoke tests simple. A hardened production version would us
 
 ## Remaining baseline work
 
-The next development steps are full sustained-run closure and final submission preparation, not proving the core chain again.
+The physical-to-cloud technical baseline and full sustained bench validation are complete at prototype level. Remaining repository work is deliberately bounded to usability, security automation, release closure and assessed-submission preparation.
 
 | Priority | Next work |
 |---|---|
-| 1 | Prepare, execute and analyse the full 24-hour sustained bench telemetry run when the hardware can be left undisturbed |
-| 2 | Update project-control records after sustained-run evidence closure |
-| 3 | Prepare final demonstration assets and demo script |
-| 4 | Complete Final Report evidence mapping and final submission checks |
+| 1 | Add the bounded dashboard automatic-refresh enhancement and complete targeted local, CI, Docker and Azure-hosted validation |
+| 2 | Add Dependabot and CodeQL, review the initial results and address only justified high-value findings |
+| 3 | Align project-control records and create the `v1.0.0` capstone prototype baseline release |
+| 4 | Complete the Final Report, presentation, demonstration video and final submission assurance |
 
-The project now has a validated technical baseline, Azure-hosted dashboard evidence, post-deployment regression evidence, bounded failure-mode evidence, a short sustained hosted telemetry dry run, minimal build-and-test CI and targeted dashboard logic tests. The next phase is full sustained-run closure, final presentation readiness and Final Report evidence mapping.
+These remaining items must not reopen the settled device-to-cloud architecture, introduce new sensors or expand into a broader infrastructure programme before the assessed submissions are secure.
 
 ---
 
 ## Project direction
 
-HiveWatch Cloud IoT now has a working baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, Docker containerisation, Azure App Service hosted dashboard validation, post-deployment regression, bounded failure-mode evidence, short sustained hosted telemetry dry-run evidence and automated build-and-test checks.
+HiveWatch Cloud IoT now has a working prototype baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, Docker containerisation, Azure App Service hosted dashboard validation, post-deployment regression, bounded failure-mode evidence, short sustained telemetry dry-run evidence, full 24-hour sustained bench telemetry evidence and automated build-and-test checks.
 
-The project will now mature toward full 24-hour sustained telemetry validation, final demonstration preparation and Final Report evidence mapping. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain stretch goals until the core monitoring system is stable, validated and ready for demonstration.
+The project will now complete a bounded dashboard automatic-refresh enhancement, add Dependabot and CodeQL security automation, prepare the `v1.0.0` capstone prototype baseline release, and then enter technical freeze for the Final Report, presentation and demonstration video. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain deferred stretch goals.
