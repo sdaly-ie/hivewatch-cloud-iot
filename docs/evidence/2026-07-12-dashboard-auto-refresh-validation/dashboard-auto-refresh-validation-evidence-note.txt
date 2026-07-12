@@ -1,0 +1,80 @@
+HiveWatch Cloud IoT - Dashboard Auto-Refresh Validation
+CT5222 Capstone Project
+
+Validation date:
+2026-07-12
+
+Feature:
+Bounded automatic refresh of the hosted HiveWatch dashboard every 5 minutes 30 seconds.
+
+Implementation scope:
+- Dashboard Index page only
+- Simple browser timeout using window.setTimeout
+- Full-page reload using window.location.reload()
+- Configured interval: 330000 milliseconds
+- User-facing notice added to the dashboard
+- No SignalR, WebSockets, background polling, firmware changes, Azure Function changes, storage-schema changes or infrastructure redesign
+
+Source-control reference:
+- Branch: feat/add-dashboard-auto-refresh
+- Feature commit: 960d2bfef021
+- Pull request status at validation time: Open; GitHub Actions passed; no conflicts with main
+
+Build and automated-test results:
+- Dashboard Release build: Passed
+- Targeted xUnit tests: 8 passed, 0 failed, 0 skipped
+- GitHub Actions build-and-test workflow: Passed
+
+Local dashboard validation:
+- Dashboard loaded successfully on the local Razor Pages runtime
+- Auto-refresh notice rendered correctly
+- Automatic reload occurred after approximately 5 minutes 30 seconds
+- Reloaded document request returned HTTP 200
+- Dashboard panels continued to render after reload
+- Navigation type reported: reload
+- dashboardRefreshIntervalMs reported: 330000
+
+Docker validation:
+- Docker image built successfully
+- Container started successfully on localhost:8080
+- Initial dashboard request returned HTTP 200
+- Automatic reload occurred after approximately 5 minutes 30 seconds
+- Reloaded document request returned HTTP 200
+- Dashboard telemetry, freshness, analytics, alert status and recent readings continued to render
+- Navigation type reported: reload
+- dashboardRefreshIntervalMs reported: 330000
+- Temporary validation container was stopped and removed after testing
+
+Azure deployment validation:
+- Azure Container Registry: hivewatchacr80228
+- ACR repository: hivewatch-dashboard
+- Immutable image tag: auto-refresh-960d2bfef021
+- Image digest:
+  sha256:a489befd5049129bc8ef05d4cf0bd67830c794ea86597fc67caae13c94326fa6
+- Azure App Service: hivewatch-dashboard-80228
+- Hosted image reference:
+  hivewatchacr80228.azurecr.io/hivewatch-dashboard:auto-refresh-960d2bfef021
+- Managed-identity ACR pull remained enabled
+- Updated hosted dashboard returned HTTP 200
+- Updated auto-refresh text was detected in the hosted response
+
+Hosted two-cycle validation:
+- The hosted dashboard was left untouched for more than two refresh intervals
+- Two subsequent document reload requests were observed
+- Both reload requests returned HTTP 200
+- The dashboard continued to render normally after both cycles
+- Latest telemetry and recent-reading timestamps advanced where newer data was available
+- Freshness, analytics, alert status and recent readings remained visible
+- Navigation type reported: reload
+- dashboardRefreshIntervalMs reported: 330000
+
+Evidence files:
+- azure-hosted-dashboard-auto-refresh-after-two-cycles-2026-07-12.jpg
+- azure-hosted-dashboard-auto-refresh-network-validation-2026-07-12.jpg
+- azure-hosted-dashboard-auto-refresh-console-validation-2026-07-12.jpg
+
+Validation conclusion:
+The dashboard auto-refresh enhancement passed local, automated-test, Docker and Azure-hosted validation. The implementation remained deliberately bounded and introduced no wider architectural changes. The hosted dashboard successfully reloaded every 5 minutes 30 seconds across two observed cycles while continuing to retrieve and render telemetry correctly.
+
+Validation boundary:
+This feature improves dashboard usability by periodically reloading the monitoring page. It does not provide real-time push delivery, guaranteed refresh timing, production availability, service-level reliability, fault-tolerant monitoring, field readiness or biological diagnosis.
