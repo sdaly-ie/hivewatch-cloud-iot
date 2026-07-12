@@ -19,10 +19,10 @@ The system does not diagnose disease, queen failure, brood damage or colony loss
 | Cloud backend | C#/.NET 8 isolated Azure Functions |
 | Storage layer | Azure Table Storage using the `TelemetryReadings` table |
 | Retrieval path | Hosted `GetRecentTelemetry` endpoint |
-| Dashboard | ASP.NET Core Razor Pages dashboard, validated locally, in Docker and as an Azure-hosted prototype |
+| Dashboard | ASP.NET Core Razor Pages dashboard with bounded automatic refresh every 5 minutes 30 seconds, validated locally, in Docker and as an Azure-hosted prototype |
 | Deployment route | Docker image pushed to Azure Container Registry and hosted through Azure App Service for Containers |
-| Current dashboard behaviour | Latest reading, recent readings, fresh or stale state, temperature alert band, sustained-alert data sufficiency and baseline analytics |
-| Current validation status | Full bench chain, baseline analytics, local containerisation, Azure-hosted dashboard validation, post-deployment regression, bounded failure-mode evidence, short sustained hosted telemetry dry run, full 24-hour sustained bench telemetry validation, build-and-test CI and targeted dashboard logic tests completed |
+| Current dashboard behaviour | Latest reading, recent readings, fresh or stale state, temperature alert band, sustained-alert data sufficiency, baseline analytics and automatic page refresh every 5 minutes 30 seconds |
+| Current validation status | Full bench chain, baseline analytics, local containerisation, Azure-hosted dashboard validation, post-deployment regression, bounded failure-mode evidence, short sustained hosted telemetry dry run, full 24-hour sustained bench telemetry validation, dashboard auto-refresh validation, build-and-test CI and targeted dashboard logic tests completed |
 | Cost-control position | Dashboard App Service Plan scaled down from B1 Basic to F1 Free after validation for cost control. Basic Azure Container Registry is retained temporarily to reduce rework for later demonstrations and validation checks. |
 | Key boundary | Bench-validated and Azure-hosted prototype, not a production hive monitoring system or biological diagnosis tool |
 
@@ -40,7 +40,7 @@ The current implementation validates a real physical temperature reading travell
 | 4 | Hosted C#/.NET Azure Function | Accepts and validates incoming telemetry |
 | 5 | Azure Table Storage | Persists accepted readings in `TelemetryReadings` |
 | 6 | Hosted `GetRecentTelemetry` endpoint | Retrieves recent stored telemetry |
-| 7 | ASP.NET Core Razor Pages dashboard | Displays latest reading, recent readings, fresh or stale state, alert band and baseline analytics |
+| 7 | ASP.NET Core Razor Pages dashboard | Displays latest reading, recent readings, fresh or stale state, alert band and baseline analytics, with bounded automatic refresh every 5 minutes 30 seconds |
 | 8 | Docker container image | Packages the dashboard for repeatable container deployment |
 | 9 | Azure Container Registry | Stores the dashboard image used by Azure App Service |
 | 10 | Azure App Service for Containers | Hosts the dashboard as an Azure web application |
@@ -62,6 +62,8 @@ A short sustained hosted telemetry dry run was later completed using the ESP32 b
 
 A full 24-hour sustained bench telemetry validation was subsequently completed using an independently mains-powered ESP32 and DS18B20 probe. The exact formal window contained 285 persisted readings against an ideal 289-reading five-minute schedule, representing 98.62% delivery. Two bounded interruption periods of approximately 10 and 15 minutes were identified. Telemetry resumed without manual intervention after both gaps and continued beyond the required 24-hour duration. This supports sustained prototype-level bench operation, not production reliability, field readiness, service-level availability, live in-hive performance or biological diagnosis.
 
+The dashboard was then enhanced with a bounded automatic page refresh every 5 minutes 30 seconds. The change was validated through the dashboard Release build, eight targeted xUnit tests, GitHub Actions, the local Razor Pages runtime, a local Docker container and Azure App Service. Two observed hosted refresh cycles returned HTTP `200`, advanced the displayed telemetry where newer readings were available and preserved freshness, analytics, alert and recent-reading presentation. This is periodic page reload behaviour, not real-time push delivery or production monitoring.
+
 ---
 
 ## How it works
@@ -79,7 +81,7 @@ flowchart LR
     G --> H["Docker container image"]
     H --> I["Azure Container Registry"]
     I --> J["Azure App Service for Containers"]
-    J --> K["Hosted dashboard: latest reading, recent readings, fresh or stale status, alert band and baseline analytics"]
+    J --> K["Hosted dashboard: latest reading, recent readings, freshness, alert band, baseline analytics and bounded automatic refresh"]
 ```
 
 ### Architecture notes
@@ -91,7 +93,7 @@ flowchart LR
 | `IngestTelemetry` | Validates incoming telemetry and stores accepted readings |
 | Azure Table Storage | Provides durable storage for accepted telemetry records |
 | `GetRecentTelemetry` | Reads back recent stored telemetry for dashboard use |
-| Razor Pages dashboard | Displays latest reading, recent readings, fresh or stale state, alert band and baseline analytics |
+| Razor Pages dashboard | Displays latest reading, recent readings, fresh or stale state, alert band and baseline analytics, and reloads the page every 5 minutes 30 seconds |
 | Docker container image | Packages the dashboard with a multi-stage .NET 8 build for container deployment |
 | Azure Container Registry | Stores the versioned dashboard image for App Service pull |
 | Azure App Service for Containers | Hosts the dashboard as a deployed Azure web application |
@@ -111,6 +113,7 @@ The dashboard displays:
 | Temperature alert band | Classifies the latest reading against evidence-informed brood nest temperature bands |
 | Sustained alert data sufficiency | Separates an immediate out-of-range reading from a sustained alert state requiring enough recent readings |
 | Baseline analytics | Summarises retrieved temperature readings using latest, minimum, maximum, average, median, reading count and simple trend status |
+| Automatic page refresh | Reloads the dashboard every 5 minutes 30 seconds so newly persisted telemetry can be retrieved without manual page refresh |
 
 The dashboard is read-only and has been validated in three forms:
 
@@ -118,7 +121,7 @@ The dashboard is read-only and has been validated in three forms:
 |---|---|
 | Local Razor Pages dashboard | Validated |
 | Local Docker container | Validated |
-| Azure App Service for Containers | Validated at prototype smoke-test and post-deployment regression level |
+| Azure App Service for Containers | Validated through prototype smoke testing, post-deployment regression and two hosted automatic-refresh cycles |
 
 ---
 
@@ -166,6 +169,7 @@ This boundary matters because a bench temperature reading can validate system be
 | Bounded failure-mode evidence | Validated for invalid JSON and missing required telemetry fields |
 | Sustained hosted telemetry dry run | Validated at short bench-run level with four accepted interval posts and Azure Table Storage persistence |
 | 24-hour sustained telemetry run | Validated at prototype bench level: 285 persisted readings in the exact formal window, 98.62% delivery against the ideal schedule, two bounded gaps, with telemetry resuming without manual intervention |
+| Dashboard automatic refresh | Validated locally, in Docker and on Azure App Service across two hosted automatic reload cycles scheduled 5 minutes 30 seconds apart, both returning HTTP `200` |
 
 ---
 
@@ -222,6 +226,21 @@ The formal validation window ran from `2026-07-11 16:20:48 UTC` to `2026-07-12 1
 | [`azure-table-storage-24-hour-sustained-telemetry-final-state-2026-07-12.jpg`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/azure-table-storage-24-hour-sustained-telemetry-final-state-2026-07-12.jpg) | Continued persistence of telemetry in Azure Table Storage after the formal validation window |
 | [`azure-hosted-dashboard-24-hour-sustained-telemetry-final-state-2026-07-12.jpg`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/azure-hosted-dashboard-24-hour-sustained-telemetry-final-state-2026-07-12.jpg) | Hosted dashboard retrieving current telemetry and displaying Fresh status, analytics, alert status and recent readings |
 | [`physical-bench-setup-24-hour-sustained-telemetry-run-2026-07-11.jpg`](docs/evidence/2026-07-11-24-hour-sustained-telemetry-run/physical-bench-setup-24-hour-sustained-telemetry-run-2026-07-11.jpg) | Independently powered ESP32, DS18B20 probe and prototype bench arrangement used during the sustained validation |
+
+### Dashboard auto-refresh validation
+
+The dashboard auto-refresh evidence is stored in [`docs/evidence/2026-07-12-dashboard-auto-refresh-validation/`](docs/evidence/2026-07-12-dashboard-auto-refresh-validation/).
+
+The dashboard Index page uses a browser timeout of `330000` milliseconds to perform a full-page reload every 5 minutes 30 seconds. The implementation was validated locally, through the existing automated tests and GitHub Actions workflow, in a local Docker container and through the Azure-hosted deployment. Two hosted automatic-refresh cycles returned HTTP `200`, while telemetry, freshness, analytics, alert status and recent readings continued to render correctly.
+
+| Evidence artefact | What it demonstrates |
+|---|---|
+| [`azure-hosted-dashboard-auto-refresh-after-two-cycles-2026-07-12.jpg`](docs/evidence/2026-07-12-dashboard-auto-refresh-validation/azure-hosted-dashboard-auto-refresh-after-two-cycles-2026-07-12.jpg) | Hosted dashboard rendering current telemetry and the configured refresh notice after two automatic cycles |
+| [`azure-hosted-dashboard-auto-refresh-network-validation-2026-07-12.jpg`](docs/evidence/2026-07-12-dashboard-auto-refresh-validation/azure-hosted-dashboard-auto-refresh-network-validation-2026-07-12.jpg) | DevTools Network evidence showing the initial request and two subsequent document reloads returning HTTP `200` |
+| [`azure-hosted-dashboard-auto-refresh-console-validation-2026-07-12.jpg`](docs/evidence/2026-07-12-dashboard-auto-refresh-validation/azure-hosted-dashboard-auto-refresh-console-validation-2026-07-12.jpg) | Browser navigation type reported as `reload` and the configured interval reported as `330000` milliseconds |
+| [`dashboard-auto-refresh-validation-evidence-note.txt`](docs/evidence/2026-07-12-dashboard-auto-refresh-validation/dashboard-auto-refresh-validation-evidence-note.txt) | Validation scope, implementation boundary, build and test results, Docker checks, Azure deployment details and hosted two-cycle result |
+
+The feature improves monitoring usability through periodic page reloads. It does not provide real-time push delivery, guaranteed refresh timing, service-level availability or production monitoring.
 
 ### CI and automated test validation
 
@@ -324,7 +343,7 @@ docs/evidence/2026-05-23-fresh-full-chain-validation/
 | Cloud backend | Azure Functions, Azure Table Storage, .NET 8 isolated worker model, C# |
 | Storage integration | Azure.Data.Tables client library, `TelemetryReadings` table |
 | Retrieval path | HTTP GET Function endpoint, latest and recent stored telemetry JSON read back |
-| Dashboard | ASP.NET Core Razor Pages, typed `HttpClient`, Bootstrap-based Razor Pages UI |
+| Dashboard | ASP.NET Core Razor Pages, typed `HttpClient`, Bootstrap-based Razor Pages UI and bounded JavaScript page-reload timer |
 | Dashboard logic tests | xUnit, Microsoft.NET.Test.Sdk, deterministic service-layer tests |
 | CI validation | GitHub Actions build-and-test workflow |
 | Containerisation | Docker Desktop, multi-stage .NET 8 Dockerfile, root `.dockerignore`, local dashboard image build |
@@ -473,6 +492,8 @@ For Azure deployment, the dashboard image was tagged and pushed to Azure Contain
 
 After hosted validation, the App Service Plan was scaled from B1 Basic to F1 Free to protect Azure student credit while preserving the deployed configuration for light follow-up checks.
 
+The automatic-refresh enhancement was later deployed using the immutable Azure Container Registry image tag `auto-refresh-960d2bfef021`. Azure App Service retained managed-identity registry access, returned HTTP `200`, displayed the updated refresh notice and completed two observed automatic page-reload cycles successfully.
+
 ---
 
 ## Repository layout
@@ -499,7 +520,8 @@ hivewatch-cloud-iot/
 |   |   |-- 2026-07-05-post-deployment-regression/
 |   |   |-- 2026-07-07-bounded-failure-mode-evidence/
 |   |   |-- 2026-07-11-sustained-hosted-telemetry-run/
-|   |   `-- 2026-07-11-24-hour-sustained-telemetry-run/
+|   |   |-- 2026-07-11-24-hour-sustained-telemetry-run/
+|   |   `-- 2026-07-12-dashboard-auto-refresh-validation/
 |   `-- images/
 |-- firmware/
 |   `-- proofs/
@@ -556,21 +578,21 @@ This kept early HTTPS smoke tests simple. A hardened production version would us
 
 ## Remaining baseline work
 
-The physical-to-cloud technical baseline and full sustained bench validation are complete at prototype level. Remaining repository work is deliberately bounded to usability, security automation, release closure and assessed-submission preparation.
+The physical-to-cloud technical baseline, full sustained bench validation and bounded dashboard auto-refresh enhancement are complete at prototype level. Remaining repository work is limited to security automation, release closure and assessed-submission preparation.
 
 | Priority | Next work |
 |---|---|
-| 1 | Add the bounded dashboard automatic-refresh enhancement and complete targeted local, CI, Docker and Azure-hosted validation |
-| 2 | Add Dependabot and CodeQL, review the initial results and address only justified high-value findings |
+| 1 | Add Dependabot configuration, review the initial dependency findings and address only justified high-value issues |
+| 2 | Add CodeQL analysis, review the initial results and address only justified high-value findings |
 | 3 | Align project-control records and create the `v1.0.0` capstone prototype baseline release |
 | 4 | Complete the Final Report, presentation, demonstration video and final submission assurance |
 
-These remaining items must not reopen the settled device-to-cloud architecture, introduce new sensors or expand into a broader infrastructure programme before the assessed submissions are secure.
+Heavier infrastructure work, new sensors and broader stretch development remain deferred until the assessed submissions are secure.
 
 ---
 
 ## Project direction
 
-HiveWatch Cloud IoT now has a working prototype baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, Docker containerisation, Azure App Service hosted dashboard validation, post-deployment regression, bounded failure-mode evidence, short sustained telemetry dry-run evidence, full 24-hour sustained bench telemetry evidence and automated build-and-test checks.
+HiveWatch Cloud IoT now has a working prototype baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, bounded automatic dashboard refresh, Docker containerisation, Azure App Service hosted validation, post-deployment regression, bounded failure-mode evidence, short sustained telemetry dry-run evidence, full 24-hour sustained bench telemetry evidence and automated build-and-test checks.
 
-The project will now complete a bounded dashboard automatic-refresh enhancement, add Dependabot and CodeQL security automation, prepare the `v1.0.0` capstone prototype baseline release, and then enter technical freeze for the Final Report, presentation and demonstration video. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain deferred stretch goals.
+The next bounded repository work is Dependabot and CodeQL security automation, followed by the `v1.0.0` capstone prototype baseline release and technical freeze for the Final Report, presentation and demonstration video. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain deferred stretch goals.
