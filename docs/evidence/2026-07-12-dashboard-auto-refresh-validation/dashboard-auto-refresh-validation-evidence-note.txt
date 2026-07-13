@@ -78,3 +78,23 @@ The dashboard auto-refresh enhancement passed local, automated-test, Docker and 
 
 Validation boundary:
 This feature improves dashboard usability by periodically reloading the monitoring page. It does not provide real-time push delivery, guaranteed refresh timing, production availability, service-level reliability, fault-tolerant monitoring, field readiness or biological diagnosis.
+
+Supplementary device-offline validation - 13 July 2026
+
+After completion of the dashboard auto-refresh milestone, the ESP32 telemetry source was powered off and the Azure-hosted dashboard was observed under a no-new-telemetry condition.
+
+Observed results:
+- The hosted dashboard continued to reload automatically without visible application errors.
+- Multiple hosted document requests returned HTTP 200 while the ESP32 was offline.
+- The latest persisted telemetry, analytics, alert status and recent-readings table remained available.
+- While the last reading was still within the configured freshness threshold, the dashboard correctly displayed Fresh.
+- After the freshness threshold elapsed, the dashboard naturally transitioned to Stale.
+- The stale-state message indicated that the device may be offline or that no recent telemetry had been posted.
+- No dashboard code, firmware, Azure Function, storage configuration or telemetry data was changed to force the result.
+
+Supplementary evidence:
+- azure-hosted-dashboard-auto-refresh-device-offline-fresh-2026-07-12.jpg
+- azure-hosted-dashboard-auto-refresh-device-offline-stale-2026-07-13.jpg
+
+Interpretation:
+This supplementary check supports graceful degraded-state behaviour when the telemetry source is unavailable. It confirms that periodic dashboard reloads continue to retrieve and render retained Azure Table Storage data and that the existing freshness logic communicates the absence of recent telemetry. It does not establish production availability, service-level reliability or remote-field connectivity.
