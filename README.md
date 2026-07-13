@@ -501,6 +501,7 @@ The automatic-refresh enhancement was later deployed using the immutable Azure C
 ```text
 hivewatch-cloud-iot/
 |-- .github/
+|   |-- dependabot.yml
 |   `-- workflows/
 |       `-- dotnet-build.yml
 |-- cloud/
@@ -535,6 +536,12 @@ hivewatch-cloud-iot/
 ## Configuration and security notes
 
 This repository is prepared for public sharing and intentionally excludes local or secret-bearing configuration.
+
+### Dependency security automation
+
+The repository uses GitHub's dependency graph, Dependabot alerts and Dependabot security updates to identify known dependency vulnerabilities and, when a patched version is available, propose remediation through pull requests. Automatic merging is not enabled.
+
+Routine Dependabot version-update pull requests are intentionally paused during capstone project closure and submission preparation. General dependency modernisation is deferred to post-project maintenance so that nonessential package or workflow upgrades do not introduce compatibility changes or avoidable revalidation. Security-related remediation remains in scope and will be reviewed individually.
 
 Placeholder values are used for:
 
@@ -578,21 +585,20 @@ This kept early HTTPS smoke tests simple. A hardened production version would us
 
 ## Remaining baseline work
 
-The physical-to-cloud technical baseline, full sustained bench validation and bounded dashboard auto-refresh enhancement are complete at prototype level. Remaining repository work is limited to security automation, release closure and assessed-submission preparation.
+The physical-to-cloud technical baseline, full sustained bench validation, bounded dashboard auto-refresh enhancement and Dependabot security automation are complete at prototype level. Remaining repository work is limited to CodeQL analysis, release closure and assessed-submission preparation.
 
 | Priority | Next work |
 |---|---|
-| 1 | Add Dependabot configuration, review the initial dependency findings and address only justified high-value issues |
-| 2 | Add CodeQL analysis, review the initial results and address only justified high-value findings |
-| 3 | Align project-control records and create the `v1.0.0` capstone prototype baseline release |
-| 4 | Complete the Final Report, presentation, demonstration video and final submission assurance |
+| 1 | Add CodeQL analysis, review the initial results and address only justified high-value findings |
+| 2 | Align project-control records and create the `v1.0.0` capstone prototype baseline release |
+| 3 | Complete the Final Report, presentation, demonstration video and final submission assurance |
 
-Heavier infrastructure work, new sensors and broader stretch development remain deferred until the assessed submissions are secure.
+Heavier infrastructure work, new sensors, routine dependency modernisation and broader stretch development remain deferred until the assessed submissions are secure.
 
 ---
 
 ## Project direction
 
-HiveWatch Cloud IoT now has a working prototype baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, bounded automatic dashboard refresh, Docker containerisation, Azure App Service hosted validation, post-deployment regression, bounded failure-mode evidence, short sustained telemetry dry-run evidence, full 24-hour sustained bench telemetry evidence and automated build-and-test checks.
+HiveWatch Cloud IoT now has a working prototype baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, bounded automatic dashboard refresh, Docker containerisation, Azure App Service hosted validation, post-deployment regression, bounded failure-mode evidence, short sustained telemetry dry-run evidence, full 24-hour sustained bench telemetry evidence, automated build-and-test checks, dependency graph visibility, Dependabot vulnerability alerts and security-update automation.
 
-The next bounded repository work is Dependabot and CodeQL security automation, followed by the `v1.0.0` capstone prototype baseline release and technical freeze for the Final Report, presentation and demonstration video. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications and extra sensors remain deferred stretch goals.
+The next bounded repository work is CodeQL code scanning, followed by the `v1.0.0` capstone prototype baseline release and technical freeze for the Final Report, presentation and demonstration video. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications, routine dependency modernisation and extra sensors remain deferred stretch goals.
