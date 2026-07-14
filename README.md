@@ -522,7 +522,8 @@ hivewatch-cloud-iot/
 |   |   |-- 2026-07-07-bounded-failure-mode-evidence/
 |   |   |-- 2026-07-11-sustained-hosted-telemetry-run/
 |   |   |-- 2026-07-11-24-hour-sustained-telemetry-run/
-|   |   `-- 2026-07-12-dashboard-auto-refresh-validation/
+|   |   |-- 2026-07-12-dashboard-auto-refresh-validation/
+|   |   `-- 2026-07-14-codeql-implementation/
 |   `-- images/
 |-- firmware/
 |   `-- proofs/
@@ -542,6 +543,21 @@ This repository is prepared for public sharing and intentionally excludes local 
 The repository uses GitHub's dependency graph, Dependabot alerts and Dependabot security updates to identify known dependency vulnerabilities and, when a patched version is available, propose remediation through pull requests. Automatic merging is not enabled.
 
 Routine Dependabot version-update pull requests are intentionally paused during capstone project closure and submission preparation. General dependency modernisation is deferred to post-project maintenance so that nonessential package or workflow upgrades do not introduce compatibility changes or avoidable revalidation. Security-related remediation remains in scope and will be reviewed individually.
+
+### Code scanning
+
+GitHub CodeQL default setup is enabled for C#, JavaScript/TypeScript and GitHub Actions. The configuration runs for pushes and pull requests targeting `main`, with scheduled scanning also enabled.
+
+Initial default setup attempted C/C++ analysis but could not identify a compatible source/build target for that language group. The unsuccessful C/C++ configuration was therefore removed. Arduino firmware assurance remains based on compilation, upload, bench validation and sustained telemetry evidence rather than CodeQL coverage.
+
+The initial CodeQL analysis reported two medium-severity `js/unsafe-jquery-plugin` findings in bundled jQuery Validation assets. Repository inspection confirmed that the validation partial and related libraries were unused by the dashboard. Their removal passed the dashboard Release build, all 8 automated tests, a local HTTP smoke test and live telemetry retrieval.
+
+After the remediation was merged, CodeQL reported 0 open and 2 closed alerts, with all configured tools working as expected. This records the configured analysis scope and closure of the identified findings; it does not claim exhaustive security assurance.
+
+CodeQL closure evidence:
+
+- [Default setup working as expected](docs/evidence/2026-07-14-codeql-implementation/github-codeql-default-setup-working-as-expected-2026-07-14.jpg)
+- [Code scanning alerts resolved: 0 open and 2 closed](docs/evidence/2026-07-14-codeql-implementation/github-codeql-alerts-resolved-0-open-2-closed-2026-07-14.jpg)
 
 Placeholder values are used for:
 
@@ -585,12 +601,12 @@ This kept early HTTPS smoke tests simple. A hardened production version would us
 
 ## Remaining baseline work
 
-The physical-to-cloud technical baseline, full sustained bench validation, bounded dashboard auto-refresh enhancement and Dependabot security automation are complete at prototype level. Remaining repository work is limited to CodeQL analysis, release closure and assessed-submission preparation.
+The physical-to-cloud technical baseline, full sustained bench validation, bounded dashboard auto-refresh enhancement, Dependabot security automation and CodeQL implementation are complete at prototype level. Remaining repository work is limited to project-control alignment, release closure and assessed-submission preparation.
 
 | Priority | Next work |
 |---|---|
-| 1 | Add CodeQL analysis, review the initial results and address only justified high-value findings |
-| 2 | Align project-control records and create the `v1.0.0` capstone prototype baseline release |
+| 1 | Align the project-control records and complete the technical closure documentation |
+| 2 | Create the `v1.0.0` capstone prototype baseline release and apply the technical freeze |
 | 3 | Complete the Final Report, presentation, demonstration video and final submission assurance |
 
 Heavier infrastructure work, new sensors, routine dependency modernisation and broader stretch development remain deferred until the assessed submissions are secure.
@@ -599,6 +615,8 @@ Heavier infrastructure work, new sensors, routine dependency modernisation and b
 
 ## Project direction
 
-HiveWatch Cloud IoT now has a working prototype baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, bounded automatic dashboard refresh, Docker containerisation, Azure App Service hosted validation, post-deployment regression, bounded failure-mode evidence, short sustained telemetry dry-run evidence, full 24-hour sustained bench telemetry evidence, automated build-and-test checks, dependency graph visibility, Dependabot vulnerability alerts and security-update automation.
+HiveWatch Cloud IoT now has a working prototype baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, bounded automatic dashboard refresh, Docker containerisation, Azure App Service hosted validation, post-deployment regression, bounded failure-mode evidence, short sustained telemetry dry-run evidence, full 24-hour sustained bench telemetry evidence, automated build-and-test checks, dependency graph visibility, Dependabot vulnerability alerts, security-update automation and CodeQL scanning for C#, JavaScript/TypeScript and GitHub Actions.
 
-The next bounded repository work is CodeQL code scanning, followed by the `v1.0.0` capstone prototype baseline release and technical freeze for the Final Report, presentation and demonstration video. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications, routine dependency modernisation and extra sensors remain deferred stretch goals.
+The initial two medium-severity CodeQL findings in unused jQuery validation template assets were investigated, remediated and closed. At the recorded closure point, the default branch had 0 open and 2 closed code-scanning alerts, and all configured CodeQL tools were working as expected.
+
+The next bounded repository work is project-control alignment, creation of the `v1.0.0` capstone prototype baseline release and application of the technical freeze, followed by completion of the Final Report, presentation and demonstration video. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications, routine dependency modernisation and extra sensors remain deferred stretch goals.
