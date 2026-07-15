@@ -1,5 +1,14 @@
 # HiveWatch Cloud Internet of Things (IoT)
 
+[![.NET build and test](https://github.com/sdaly-ie/hivewatch-cloud-iot/actions/workflows/dotnet-build.yml/badge.svg?branch=main)](https://github.com/sdaly-ie/hivewatch-cloud-iot/actions/workflows/dotnet-build.yml)
+[![Release](https://img.shields.io/badge/release-v1.0.0-blue)](https://github.com/sdaly-ie/hivewatch-cloud-iot/releases/tag/v1.0.0)
+![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
+![Microsoft Azure](https://img.shields.io/badge/Microsoft%20Azure-cloud%20platform-0078D4?logo=microsoftazure&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-containerised-2496ED?logo=docker&logoColor=white)
+![ESP32](https://img.shields.io/badge/ESP32-Arduino%2FC%2B%2B-E7352C?logo=espressif&logoColor=white)
+
+**A sensor-to-cloud beehive temperature-monitoring prototype using ESP32, Azure Functions, Azure Table Storage and an ASP.NET Core dashboard.**
+
 HiveWatch Cloud IoT is built around a simple problem: a beekeeper cannot protect what they cannot see between inspections. Inside every productive hive is a nursery called the brood nest. This is where eggs, larvae and developing young bees depend on stable warmth. When that temperature falls, rises or becomes unstable for long enough, the colony may face higher risk of stress, poor development, disease-related problems or other issues that need attention.
 
 HiveWatch gives beekeepers remote visibility across dispersed apiary sites. Using a physical temperature sensor, it captures hive readings, sends them to the cloud, stores the data, and presents recent readings, alert bands, freshness status and baseline analytics on a dashboard that can be checked from home or while on the go.
@@ -8,11 +17,50 @@ The system does not diagnose disease, queen failure, brood damage or colony loss
 
 ---
 
+## Contents
+
+- [Release status](#release-status)
+- [At a glance](#at-a-glance)
+- [Current validated baseline](#current-validated-baseline)
+- [How it works](#how-it-works)
+- [Dashboard behaviour](#dashboard-behaviour)
+- [Temperature alert boundary](#temperature-alert-boundary)
+- [Validated delivery status](#validated-delivery-status)
+- [Validation evidence](#validation-evidence)
+- [Technology stack](#technology-stack)
+- [Firmware validation sequence](#firmware-validation-sequence)
+- [Azure Function endpoints](#azure-function-endpoints)
+- [Container and Azure dashboard deployment](#container-and-azure-dashboard-deployment)
+- [Repository layout](#repository-layout)
+- [Configuration and security notes](#configuration-and-security-notes)
+- [Known limitations](#known-limitations)
+- [Post-capstone direction](#post-capstone-direction)
+
+---
+
+## Release status
+
+HiveWatch Cloud IoT has reached the `v1.0.0` capstone prototype baseline.
+
+The physical sensor-to-cloud telemetry path, Azure-hosted dashboard, Docker deployment, targeted automated tests, bounded failure-mode checks, full 24-hour sustained bench validation, dashboard auto-refresh, dependency-security automation and CodeQL remediation have been completed and evidenced at prototype level.
+
+The repository is now under technical freeze following the `v1.0.0` release. Further feature development, infrastructure expansion and routine dependency modernisation are deferred to a future post-capstone phase.
+
+- [View the v1.0.0 release](https://github.com/sdaly-ie/hivewatch-cloud-iot/releases/tag/v1.0.0)
+
+> **For reviewers:** `v1.0.0` is the stable capstone submission snapshot. Please use the release page when reviewing the submitted project. The `main` branch may receive maintenance updates after submission.
+
+This release remains a controlled bench prototype. It does not claim production readiness, live in-hive validation, service-level availability, exhaustive security assurance or biological diagnosis.
+
+---
+
 ## At a glance
 
-| Area | Current position |
+| Area | Final position |
 |---|---|
 | Project type | Solo CT-5222 capstone project |
+| Release | `v1.0.0` capstone prototype baseline |
+| Release state | Technically complete and under technical freeze following the `v1.0.0` release |
 | Main purpose | Remote beehive temperature monitoring for dispersed apiary sites |
 | Core sensor | DS18B20 waterproof temperature probe |
 | Device layer | ESP32 development board running Arduino/C++ firmware |
@@ -21,16 +69,16 @@ The system does not diagnose disease, queen failure, brood damage or colony loss
 | Retrieval path | Hosted `GetRecentTelemetry` endpoint |
 | Dashboard | ASP.NET Core Razor Pages dashboard with bounded automatic refresh every 5 minutes 30 seconds, validated locally, in Docker and as an Azure-hosted prototype |
 | Deployment route | Docker image pushed to Azure Container Registry and hosted through Azure App Service for Containers |
-| Current dashboard behaviour | Latest reading, recent readings, fresh or stale state, temperature alert band, sustained-alert data sufficiency, baseline analytics and automatic page refresh every 5 minutes 30 seconds |
-| Current validation status | Full bench chain, baseline analytics, local containerisation, Azure-hosted dashboard validation, post-deployment regression, bounded failure-mode evidence, short sustained hosted telemetry dry run, full 24-hour sustained bench telemetry validation, dashboard auto-refresh validation, build-and-test CI and targeted dashboard logic tests completed |
-| Cost-control position | Dashboard App Service Plan scaled down from B1 Basic to F1 Free after validation for cost control. Basic Azure Container Registry is retained temporarily to reduce rework for later demonstrations and validation checks. |
-| Key boundary | Bench-validated and Azure-hosted prototype, not a production hive monitoring system or biological diagnosis tool |
+| Validation | Full bench chain, baseline analytics, Azure deployment, post-deployment regression, bounded failure-mode checks, CI and targeted tests, short sustained dry run, full 24-hour sustained telemetry validation and dashboard auto-refresh validation completed |
+| Security assurance | Dependency graph, Dependabot alerts and security updates enabled; CodeQL enabled for C#, JavaScript/TypeScript and GitHub Actions within the documented prototype scope |
+| Cost-control position | Dashboard App Service Plan retained on F1 Free after validation. Basic Azure Container Registry is retained temporarily to preserve the deployment path for demonstration and review. |
+| Key boundary | Bench-validated and Azure-hosted prototype, not a production hive-monitoring system or biological diagnosis tool |
 
 ---
 
 ## Current validated baseline
 
-The current implementation validates a real physical temperature reading travelling through the complete baseline path:
+The `v1.0.0` release validates a real physical temperature reading travelling through the complete baseline path:
 
 | Step | Component | Role |
 |---:|---|---|
@@ -46,23 +94,19 @@ The current implementation validates a real physical temperature reading travell
 | 10 | Azure App Service for Containers | Hosts the dashboard as an Azure web application |
 | 11 | GitHub Actions | Builds the Azure Function and dashboard and runs targeted dashboard logic tests |
 
-A live DS18B20 bench reading of `19.50 °C` was captured by the ESP32 device, posted over Wi-Fi and HTTPS to the hosted Azure Function, accepted with HTTP `200`, persisted in Azure Table Storage, retrieved through `GetRecentTelemetry`, and displayed in the Razor Pages dashboard as the latest reading with Fresh status and brood temperature alert classification.
+A live DS18B20 bench reading of `19.50 °C` was captured by the ESP32, posted over Wi-Fi and HTTPS to the hosted Azure Function, accepted with HTTP `200`, persisted in Azure Table Storage, retrieved through `GetRecentTelemetry`, and displayed in the dashboard with Fresh status and brood-temperature alert classification.
 
-The dashboard was later extended with baseline analytics. It summarises retrieved temperature telemetry using latest, minimum, maximum, average, median, reading count and a simple trend status. The containerised dashboard was also deployed to Azure App Service for Containers and validated as an Azure-hosted prototype.
+The delivered prototype was subsequently strengthened through:
 
-Following the Azure deployment milestone, a focused evidence-closure sprint was completed. This work revalidated the deployed cloud and dashboard path, added minimal CI and targeted dashboard logic tests, and captured bounded failure-mode evidence for the hosted ingestion endpoint.
+- Baseline analytics covering latest, minimum, maximum, average, median, reading count and simple trend.
+- Docker containerisation and Azure App Service for Containers deployment.
+- Structured post-deployment regression, minimal build-and-test CI and eight targeted xUnit tests.
+- Bounded failure-mode checks confirming HTTP `400` responses for invalid JSON and missing required telemetry fields.
+- A short repeated-post dry run, followed by a full 24-hour sustained bench validation containing 285 persisted readings against an ideal 289-reading schedule, representing 98.62% delivery.
+- Bounded dashboard auto-refresh every 5 minutes 30 seconds, validated locally, in Docker and through two hosted Azure reload cycles returning HTTP `200`.
+- Dependabot security automation and CodeQL scanning, including remediation and closure of the two initial CodeQL findings.
 
-The post-deployment regression evidence revalidated the cloud and dashboard projects, physical ESP32-to-Azure ingestion, Azure Table Storage persistence, hosted retrieval, local dashboard rendering, Docker container execution and Azure-hosted dashboard rendering. This supports prototype-level confidence and final demonstration readiness. It does not claim production hardening, live in-hive operation, service-level availability or biological diagnosis.
-
-The project was also strengthened with a minimal GitHub Actions build-and-test workflow and targeted xUnit tests for deterministic dashboard service-layer logic. The workflow builds the Azure Function and dashboard projects and runs the dashboard logic tests on pull requests and pushes to `main`.
-
-Bounded failure-mode evidence was added for the hosted `IngestTelemetry` endpoint. Invalid JSON and missing required telemetry field checks both returned HTTP `400` responses. This supports prototype-level failure-mode confidence without claiming production security hardening, service-level availability, malicious traffic resistance or full API test coverage.
-
-A short sustained hosted telemetry dry run was later completed using the ESP32 board and the DS18B20 probe. The sustained proof sent one immediate reading after boot and continued at a five-minute interval. Four consecutive telemetry attempts were accepted with HTTP `200`, the Serial Monitor recorded `Successful POST count: 4` and `Failed/skipped POST count: 0`, and the resulting readings were confirmed in Azure Table Storage. This established readiness for the longer sustained validation.
-
-A full 24-hour sustained bench telemetry validation was subsequently completed using an independently mains-powered ESP32 and DS18B20 probe. The exact formal window contained 285 persisted readings against an ideal 289-reading five-minute schedule, representing 98.62% delivery. Two bounded interruption periods of approximately 10 and 15 minutes were identified. Telemetry resumed without manual intervention after both gaps and continued beyond the required 24-hour duration. This supports sustained prototype-level bench operation, not production reliability, field readiness, service-level availability, live in-hive performance or biological diagnosis.
-
-The dashboard was then enhanced with a bounded automatic page refresh every 5 minutes 30 seconds. The change was validated through the dashboard Release build, eight targeted xUnit tests, GitHub Actions, the local Razor Pages runtime, a local Docker container and Azure App Service. Two observed hosted refresh cycles returned HTTP `200`, advanced the displayed telemetry where newer readings were available and preserved freshness, analytics, alert and recent-reading presentation. This is periodic page reload behaviour, not real-time push delivery or production monitoring.
+<sub><strong>Scope note:</strong> These results support prototype-level confidence and demonstration readiness. They do not establish production hardening, guaranteed service availability, live in-hive performance or biological diagnosis.</sub>
 
 ---
 
@@ -142,34 +186,32 @@ This boundary matters because a bench temperature reading can validate system be
 
 ---
 
-## Current status
+## Validated delivery status
 
 | Area | Status |
 |---|---|
-| DS18B20 sensor detection | Validated |
-| Live local temperature readings | Validated |
-| ESP32 Wi-Fi connectivity | Validated |
-| Remote telemetry POST smoke test | Validated |
-| Azure Function ingestion endpoint | Validated |
-| ESP32 to hosted Azure Function telemetry POST | Validated |
-| Accepted telemetry to Azure Table Storage persistence | Validated |
-| Latest and recent stored telemetry retrieval endpoint | Validated |
-| Local dashboard latest reading view | Validated |
-| Local dashboard recent readings table | Validated |
-| Local dashboard fresh or stale state | Validated |
-| Local dashboard brood temperature alert status | Validated |
-| Fresh full chain bench validation | Validated |
+| DS18B20 sensor detection and live readings | Validated |
+| ESP32 Wi-Fi connectivity and remote telemetry POST | Validated |
+| Azure Function ingestion | Validated |
+| Azure Table Storage persistence | Validated |
+| `GetRecentTelemetry` retrieval | Validated |
+| Local dashboard latest/recent readings, freshness and alert status | Validated |
 | Dashboard baseline analytics | Validated |
-| Expansion-board DS18B20 revalidation | Validated |
+| Expansion-board DS18B20 hardware-layout revalidation | Validated |
 | Local dashboard containerisation | Validated |
 | Azure dashboard deployment | Validated at prototype level and cost-controlled on F1 Free |
-| Post-deployment regression evidence | Validated |
-| Build-and-test CI | Minimal GitHub Actions workflow added and validated |
-| Targeted automated tests | Added for deterministic dashboard alert and analytics logic |
-| Bounded failure-mode evidence | Validated for invalid JSON and missing required telemetry fields |
-| Sustained hosted telemetry dry run | Validated at short bench-run level with four accepted interval posts and Azure Table Storage persistence |
-| 24-hour sustained telemetry run | Validated at prototype bench level: 285 persisted readings in the exact formal window, 98.62% delivery against the ideal schedule, two bounded gaps, with telemetry resuming without manual intervention |
-| Dashboard automatic refresh | Validated locally, in Docker and on Azure App Service across two hosted automatic reload cycles scheduled 5 minutes 30 seconds apart, both returning HTTP `200` |
+| Post-deployment regression | Validated |
+| Build-and-test CI | GitHub Actions workflow implemented and validated |
+| Targeted automated tests | Eight deterministic dashboard alert and analytics tests implemented and passing |
+| Bounded failure-mode checks | Invalid JSON and missing required fields rejected with HTTP `400` |
+| Sustained hosted telemetry dry run | Four accepted interval posts, zero failed/skipped posts and Azure Table Storage persistence |
+| Full 24-hour sustained telemetry validation | 285 readings in the formal window; 98.62% against the ideal schedule; two bounded gaps; autonomous recovery observed |
+| Dashboard automatic refresh | Validated locally, in Docker and through two Azure-hosted reload cycles scheduled 5 minutes 30 seconds apart |
+| Dependabot security automation | Dependency graph, alerts and security updates enabled; routine version-update PRs paused for release closure |
+| CodeQL scanning | Enabled and healthy for C#, JavaScript/TypeScript and GitHub Actions |
+| CodeQL findings | 0 open and 2 closed at the recorded release-closure point |
+| Repository release | `v1.0.0` capstone prototype baseline |
+| Technical freeze | Applied with the `v1.0.0` release |
 
 ---
 
@@ -242,6 +284,17 @@ The dashboard Index page uses a browser timeout of `330000` milliseconds to perf
 
 The feature improves monitoring usability through periodic page reloads. It does not provide real-time push delivery, guaranteed refresh timing, service-level availability or production monitoring.
 
+### Repository security automation and CodeQL closure
+
+GitHub CodeQL default setup is enabled for C#, JavaScript/TypeScript and GitHub Actions. Two initial medium-severity findings in unused jQuery Validation template assets were investigated, remediated by removing the unused assets and closed after successful post-remediation analysis.
+
+| Evidence artefact | What it demonstrates |
+|---|---|
+| [CodeQL default setup working as expected](docs/evidence/2026-07-14-codeql-implementation/github-codeql-default-setup-working-as-expected-2026-07-14.jpg) | Healthy configured analysis for C#, JavaScript/TypeScript and GitHub Actions |
+| [CodeQL alerts resolved](docs/evidence/2026-07-14-codeql-implementation/github-codeql-alerts-resolved-0-open-2-closed-2026-07-14.jpg) | Recorded closure position of 0 open and 2 closed code-scanning alerts |
+
+This evidence records the configured analysis scope and closure of identified findings. It does not claim exhaustive security assurance or production hardening.
+
 ### CI and automated test validation
 
 The repository now includes a GitHub Actions workflow at [`.github/workflows/dotnet-build.yml`](.github/workflows/dotnet-build.yml).
@@ -285,16 +338,22 @@ docs/evidence/2026-06-02-azure-dashboard-deployment/
 
 ### Expansion-board DS18B20 revalidation
 
-The expansion-board revalidation evidence is stored in:
+On 29 May 2026, the established DS18B20 sensor-to-cloud-to-dashboard path was revalidated after mounting the ESP32 on the expansion board.
 
-```text
-docs/evidence/2026-05-29-expansion-board-ds18b20-revalidation/
-```
+The revalidation confirmed that the ESP32 could still detect the DS18B20, capture a `21.25 °C` reading, submit it to the hosted Azure Function, receive an HTTP `200` accepted response, persist the reading in Azure Table Storage and retrieve it through the dashboard.
+
+This was a hardware-layout regression check rather than a new feature or live in-hive validation.
+
+The evidence is stored in:
+
+`docs/evidence/2026-05-29-expansion-board-ds18b20-revalidation/`
 
 | Evidence artefact | What it demonstrates |
 |---|---|
-| Expansion-board evidence images | ESP32 board remained able to detect the DS18B20, capture a `21.25 °C` reading, POST to the hosted Azure Function, persist to Azure Table Storage and render through the dashboard after the hardware layout change |
-
+| [Expansion-board bench setup](docs/evidence/2026-05-29-expansion-board-ds18b20-revalidation/esp32-expansion-board-ds18b20-bench-setup-2026-05-29.jpg) | ESP32 mounted on the expansion board with the DS18B20 probe and supporting prototype wiring used during the revalidation |
+| [DS18B20 and hosted ingestion result](docs/evidence/2026-05-29-expansion-board-ds18b20-revalidation/ds18b20-expansion-retest-2026-05-29.jpg) | One DS18B20 detected, `21.25 °C` captured, Wi-Fi connected and the hosted Azure Function returned HTTP `200` with an accepted response |
+| [Azure Table Storage persistence](docs/evidence/2026-05-29-expansion-board-ds18b20-revalidation/table-storage-ds18b20-retest-2026-05-29.jpg) | Corresponding telemetry records persisted in the `TelemetryReadings` table |
+| [Dashboard retrieval and rendering](docs/evidence/2026-05-29-expansion-board-ds18b20-revalidation/dashboard-ds18b20-retest-2026-05-29.jpg) | Persisted readings retrieved and displayed with freshness, analytics and alert-status information |
 ### Baseline analytics validation
 
 The baseline analytics evidence is stored in:
@@ -346,6 +405,7 @@ docs/evidence/2026-05-23-fresh-full-chain-validation/
 | Dashboard | ASP.NET Core Razor Pages, typed `HttpClient`, Bootstrap-based Razor Pages UI and bounded JavaScript page-reload timer |
 | Dashboard logic tests | xUnit, Microsoft.NET.Test.Sdk, deterministic service-layer tests |
 | CI validation | GitHub Actions build-and-test workflow |
+| Repository security automation | GitHub dependency graph, Dependabot alerts and security updates, and CodeQL default setup |
 | Containerisation | Docker Desktop, multi-stage .NET 8 Dockerfile, root `.dockerignore`, local dashboard image build |
 | Azure dashboard hosting | Azure Container Registry, Azure App Service for Containers, Linux Web App, App Service Plan, managed identity, AcrPull, Azure CLI |
 | Validation and integration testing | Arduino Serial Monitor, Webhook.site remote POST smoke test, PowerShell REST checks, Azure Table Storage inspection, local browser checks, Docker runtime checks, hosted Azure HTTP smoke checks |
@@ -542,7 +602,7 @@ This repository is prepared for public sharing and intentionally excludes local 
 
 The repository uses GitHub's dependency graph, Dependabot alerts and Dependabot security updates to identify known dependency vulnerabilities and, when a patched version is available, propose remediation through pull requests. Automatic merging is not enabled.
 
-Routine Dependabot version-update pull requests are intentionally paused during capstone project closure and submission preparation. General dependency modernisation is deferred to post-project maintenance so that nonessential package or workflow upgrades do not introduce compatibility changes or avoidable revalidation. Security-related remediation remains in scope and will be reviewed individually.
+Routine Dependabot version-update pull requests were paused for capstone release closure and remain deferred to post-capstone maintenance. This prevents nonessential package or workflow upgrades from introducing compatibility changes during the technical freeze. Security-related remediation remains in scope and will be reviewed individually.
 
 ### Code scanning
 
@@ -599,24 +659,25 @@ This kept early HTTPS smoke tests simple. A hardened production version would us
 
 ---
 
-## Remaining baseline work
+## Known limitations
 
-The physical-to-cloud technical baseline, full sustained bench validation, bounded dashboard auto-refresh enhancement, Dependabot security automation and CodeQL implementation are complete at prototype level. Remaining repository work is limited to project-control alignment, release closure and assessed-submission preparation.
+HiveWatch `v1.0.0` is an evidence-led capstone prototype with the following boundaries:
 
-| Priority | Next work |
-|---|---|
-| 1 | Align the project-control records and complete the technical closure documentation |
-| 2 | Create the `v1.0.0` capstone prototype baseline release and apply the technical freeze |
-| 3 | Complete the Final Report, presentation, demonstration video and final submission assurance |
-
-Heavier infrastructure work, new sensors, routine dependency modernisation and broader stretch development remain deferred until the assessed submissions are secure.
+- Validation was performed using a controlled bench setup rather than a live production hive.
+- Temperature bands are monitoring and inspection-prioritisation signals, not biological diagnosis.
+- The Azure-hosted dashboard is retained on the F1 Free tier and is not presented as SLA-backed hosting.
+- Authentication, user management and production security architecture are outside the release scope.
+- CodeQL covers C#, JavaScript/TypeScript and GitHub Actions but not the Arduino/C++ firmware proofs.
+- Selected firmware proofs use simplified certificate handling and are not production-hardened.
+- Sustained telemetry results demonstrate prototype continuity, not guaranteed availability.
+- Routine dependency modernisation is deferred to a future post-capstone phase.
 
 ---
 
-## Project direction
+## Post-capstone direction
 
-HiveWatch Cloud IoT now has a working prototype baseline across physical sensing, embedded firmware, cloud ingestion, cloud persistence, hosted retrieval, dashboard display, baseline analytics, bounded automatic dashboard refresh, Docker containerisation, Azure App Service hosted validation, post-deployment regression, bounded failure-mode evidence, short sustained telemetry dry-run evidence, full 24-hour sustained bench telemetry evidence, automated build-and-test checks, dependency graph visibility, Dependabot vulnerability alerts, security-update automation and CodeQL scanning for C#, JavaScript/TypeScript and GitHub Actions.
+HiveWatch Cloud IoT has reached the `v1.0.0` capstone prototype baseline and is under technical freeze following the release.
 
-The initial two medium-severity CodeQL findings in unused jQuery validation template assets were investigated, remediated and closed. At the recorded closure point, the default branch had 0 open and 2 closed code-scanning alerts, and all configured CodeQL tools were working as expected.
+Any further development will be treated as a separate post-capstone phase. Possible future directions include controlled live-hive evaluation, production-oriented security and authentication, external notifications, infrastructure as code, richer telemetry analysis, Azure IoT Hub or Cosmos DB exploration, and additional environmental or hive-monitoring sensors.
 
-The next bounded repository work is project-control alignment, creation of the `v1.0.0` capstone prototype baseline release and application of the technical freeze, followed by completion of the Final Report, presentation and demonstration video. Heavier items such as Azure IoT Hub, Cosmos DB, Terraform, external notifications, routine dependency modernisation and extra sensors remain deferred stretch goals.
+These items are not part of the `v1.0.0` release and are not current delivery commitments. The existing release remains a controlled sensor-to-cloud-to-dashboard bench prototype.
